@@ -1,10 +1,10 @@
 import { Router } from "express";
-import gmailWebhook from "./gmail.webhook.js";
+import outLookWebhook from "./outlook.webhook.js";
 import teamsWebhook from "./teams.webhook.js";
 
 const webhookRouter = Router();
 
-webhookRouter.get("/gmail", gmailWebhook);
+webhookRouter.get("/outlook", outLookWebhook);
 webhookRouter.get("/teams", teamsWebhook);
 
 export default webhookRouter;
