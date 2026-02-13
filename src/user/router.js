@@ -3,6 +3,6 @@ import login from "./login.js";
 
 const userRouter = Router();
 
-userRouter.get("/login", login);
+userRouter.post("/login", login);
 
 export default userRouter;
