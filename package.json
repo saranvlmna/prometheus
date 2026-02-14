@@ -11,6 +11,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@google-cloud/opentelemetry-cloud-monitoring-exporter": "^0.21.0",
     "@google-cloud/storage": "^7.19.0",
     "@google/adk": "^0.3.0",
     "@google/generative-ai": "^0.1.3",
