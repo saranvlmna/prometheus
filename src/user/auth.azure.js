@@ -8,19 +8,20 @@ export default (req, res) => {
     "email",
     "offline_access",
     "User.Read",
+    // Mail permissions
     "Mail.Read",
     "Mail.ReadBasic",
+    // Calendar permissions
+    "Calendars.Read",
     "Calendars.ReadWrite",
+    // Chat permissions - THESE ARE CRITICAL
     "Chat.Read",
-    "Chat.ReadBasic",
-    // "ChannelMessage.Read.All",
-    // "Team.ReadBasic.All",
+    "Chat.ReadWrite", // ✅ Add this
+    "ChatMessage.Read", // ✅ Add this - REQUIRED for subscriptions
+    // Teams channel permissions
+    "ChannelMessage.Read.All", // ✅ Add this for Teams channels
+    // Tasks
     "Tasks.ReadWrite",
-    // "Chat.Read.All",
-    // "ChannelMessage.Read.All",
-    // "Mail.Read",
-    // "Calendars.Read",
-    // "Tasks.ReadWrite",
   ];
 
   // Generate a random state for security (CSRF protection)

@@ -1,74 +1,110 @@
-import processEvent from "../agents/index.js";
-import Subscription from "../../database/model/subscription.js";
-import User from "../../database/model/user.js";
+// src/webhooks/outlook.webhook.js
 import axios from "axios";
+import User from "../../database/model/user.js";
+import Subscription from "../../database/model/subscription.js";
+import { ensureValidToken } from "../utils/refreshToken.js";
+import Message from "../../database/model/message.js";
 
 export default async (req, res) => {
   try {
-    // 1. Validation Handshake
-    if (req.query.validationToken) {
+    // Validation
+    if (req.query && req.query.validationToken) {
+      console.log("✅ Outlook webhook validation received");
       res.set("Content-Type", "text/plain");
       return res.status(200).send(req.query.validationToken);
     }
 
-    // 2. Process Notifications
-    if (req.body.value) {
-      for (const notification of req.body.value) {
-        const { subscriptionId, resource, resourceData, clientState } = notification;
+    const notifications = req.body.value;
 
-        // Security Check
-        if (clientState !== "secureOutlookValue") {
-          console.warn("Invalid client state received for Outlook");
-          continue;
-        }
+    if (!notifications || notifications.length === 0) {
+      return res.status(202).send();
+    }
 
-        // 3. Lookup Subscription to find User
-        const subscription = await Subscription.findOne({ subscriptionId }).populate("userId");
-        const user = subscription ? subscription.userId : null;
+    console.log(`📧 Received ${notifications.length} Outlook notification(s)`);
 
-        if (!user || !user.accessToken) {
-          console.error("User not found for subscription:", subscriptionId);
-          continue;
-        }
+    for (const notification of notifications) {
+      if (notification.clientState !== "secureOutlookValue") {
+        console.warn("⚠️ Invalid clientState");
+        continue;
+      }
 
-        // 4. Fetch Actual Content (Real World Scenario)
-        // Outlook notifications usually contain the ID of the changed item in 'resourceData.id'
-        // We use the User's token to fetch the full message.
-
-        let fullMessageData = resourceData;
-
-        try {
-          // Construct absolute URL. resource is 'me/messages' usually, but we need specific message
-          // or use resourceData.id
-          const messageId = resourceData?.id;
-          if (messageId) {
-            const resourceUrl = `https://graph.microsoft.com/v1.0/me/messages/${messageId}`;
-            // console.log("Fetching full email from:", resourceUrl);
-
-            const messageResponse = await axios.get(resourceUrl, {
-              headers: { Authorization: `Bearer ${user.accessToken}` }
-            });
-
-            fullMessageData = messageResponse.data; // Now we have the full email body { body: { content: "..." }, subject: "..." }
-          }
-
-        } catch (fetchError) {
-          console.error("Failed to fetch email content:", fetchError.message);
-        }
-
-        // 5. Build an event object that the Agent expects
-        const eventContext = {
-          resourceData: fullMessageData,
-          user: user
-        };
-
-        await processEvent("outlook", eventContext);
+      try {
+        await processOutlookNotification(notification);
+      } catch (error) {
+        console.error("❌ Error processing Outlook notification:", error.message);
       }
     }
 
-    res.status(202).send();
+    return res.status(202).send();
   } catch (error) {
-    console.error("Webhook Error:", error);
-    res.status(500).send();
+    console.error("❌ Outlook webhook error:", error);
+    return res.status(202).send();
   }
 };
+
+async function processOutlookNotification(notification) {
+  const subscription = await Subscription.findOne({
+    subscriptionId: notification.subscriptionId,
+  });
+
+  if (!subscription) return;
+
+  const user = await User.findById(subscription.userId);
+  if (!user) return;
+
+  const accessToken = await ensureValidToken(user);
+
+  // Resource format: "Users/{userId}/Messages/{messageId}"
+  const messageId = notification.resourceData?.id;
+
+  // Note: notification.resource might be just "Users/id/Messages/id"
+  // but resourceData usually contains the ID directly.
+
+  if (!messageId) {
+    console.error("❌ No message ID in notification resourceData");
+    // Fallback?
+    // Regex on resource: Users/id/Messages/id
+    return;
+  }
+
+  try {
+    const messageResponse = await axios.get(
+      `https://graph.microsoft.com/v1.0/me/messages/${messageId}`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        params: {
+          $select: "subject,from,toRecipients,ccRecipients,bodyPreview,body,receivedDateTime,hasAttachments,importance",
+        },
+      }
+    );
+
+    const message = messageResponse.data;
+    console.log("✅ Fetched Outlook message:", {
+      messageId: message.id,
+      subject: message.subject,
+      from: message.from?.emailAddress?.address,
+    });
+
+    await Message.create({
+      userId: user._id,
+      platform: "outlook",
+      messageId: message.id,
+      subject: message.subject,
+      from: message.from?.emailAddress?.name,
+      fromEmail: message.from?.emailAddress?.address,
+      to: message.toRecipients?.map(r => r.emailAddress.address),
+      cc: message.ccRecipients?.map(r => r.emailAddress.address),
+      content: message.body?.content,
+      contentType: message.body?.contentType,
+      bodyPreview: message.bodyPreview,
+      receivedDateTime: message.receivedDateTime,
+      hasAttachments: message.hasAttachments,
+      importance: message.importance,
+      raw: message,
+    });
+
+    console.log("✅ Outlook message stored");
+  } catch (error) {
+    console.error("❌ Error fetching Outlook message:", error.response?.data || error.message);
+  }
+}
