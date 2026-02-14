@@ -34,7 +34,7 @@ export default (req, res) => {
     response_mode: "query",
     scope: scopes.join(" "),
     state: state,
-    prompt: "select_account"
+    // prompt: "consent" // ✅ Force re-consent to get new permissions
   });
 
   const authUrl = `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/authorize?${params.toString()}`;
