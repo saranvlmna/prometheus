@@ -15,9 +15,17 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
 
+    azureId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+    accessToken: String,
+    refreshToken: String,
+    expiry: Date,
     password: {
       type: String,
-      required: true,
+      required: false,
       minlength: 6,
       select: false,
     },

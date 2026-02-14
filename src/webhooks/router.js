@@ -4,7 +4,7 @@ import teamsWebhook from "./teams.webhook.js";
 
 const webhookRouter = Router();
 
-webhookRouter.get("/outlook", outLookWebhook);
-webhookRouter.get("/teams", teamsWebhook);
+webhookRouter.post("/outlook", outLookWebhook);
+webhookRouter.post("/teams", teamsWebhook);
 
 export default webhookRouter;

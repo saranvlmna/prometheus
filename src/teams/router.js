@@ -3,6 +3,6 @@ import graphSubscriptionCreate from "./graph.subscription.create.js";
 
 const teamsRouter = Router();
 
-teamsRouter.post("/subcription", graphSubscriptionCreate);
+teamsRouter.post("/subscription/create", graphSubscriptionCreate);
 
 export default teamsRouter;
