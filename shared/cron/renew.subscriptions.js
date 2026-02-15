@@ -1,6 +1,6 @@
 import axios from "axios";
 import cron from "node-cron";
-import Subscription from "../../../database/model/subscription.js";
+import Subscription from "../../database/model/subscription.js";
 import { getAppOnlyToken } from "../azure/getAppToken.js";
 
 // Run every 30 minutes

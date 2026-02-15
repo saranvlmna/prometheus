@@ -1,7 +1,7 @@
 // src/teams/lib/sub.create.js
 import axios from "axios";
 import Subscription from "../../../database/model/subscription.js";
-import { getAppOnlyToken } from "../../shared/azure/getAppToken.js";
+import { getAppOnlyToken } from "../../../shared/azure/getAppToken.js";
 
 export default async (accessToken, userId) => {
   try {

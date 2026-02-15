@@ -3,7 +3,7 @@ import axios from "axios";
 import Message from "../../database/model/message.js";
 import Subscription from "../../database/model/subscription.js";
 import User from "../../database/model/user.js";
-import { ensureValidToken } from "../shared/azure/refreshToken.js";
+import { ensureValidToken } from "../../shared/azure/refreshToken.js";
 
 export default async (req, res) => {
   try {
