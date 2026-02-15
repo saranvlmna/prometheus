@@ -1,7 +1,7 @@
 // src/teams/lib/sub.create.js
 import axios from "axios";
 import Subscription from "../../../database/model/subscription.js";
-import { getAppOnlyToken } from "../../utils/getAppToken.js";
+import { getAppOnlyToken } from "../../shared/azure/getAppToken.js";
 
 export default async (accessToken, userId) => {
   try {
@@ -18,12 +18,9 @@ export default async (accessToken, userId) => {
     console.log("✅ Got app-only token for subscriptions", appToken);
 
     // Get user's profile to get UPN (needed for app-only subscription resource)
-    const userProfile = await axios.get(
-      "https://graph.microsoft.com/v1.0/me",
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }
-    );
+    const userProfile = await axios.get("https://graph.microsoft.com/v1.0/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
 
     const userPrincipalName = userProfile.data.userPrincipalName;
     console.log(`👤 Creating subscriptions for user: ${userPrincipalName}`);
@@ -47,7 +44,7 @@ export default async (accessToken, userId) => {
             Authorization: `Bearer ${appToken}`, // ✅ Use app token
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       await Subscription.create({
@@ -84,7 +81,7 @@ export default async (accessToken, userId) => {
             Authorization: `Bearer ${appToken}`, // ✅ Use app token
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       await Subscription.create({
@@ -104,12 +101,9 @@ export default async (accessToken, userId) => {
 
     // 3. Teams Channels (Individual per Team)
     try {
-      const teamsResponse = await axios.get(
-        "https://graph.microsoft.com/v1.0/me/joinedTeams",
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
+      const teamsResponse = await axios.get("https://graph.microsoft.com/v1.0/me/joinedTeams", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
 
       console.log(`📡 Found ${teamsResponse.data.value.length} team(s) for user`);
 
@@ -132,7 +126,7 @@ export default async (accessToken, userId) => {
                 Authorization: `Bearer ${appToken}`, // ✅ Use app token
                 "Content-Type": "application/json",
               },
-            }
+            },
           );
 
           await Subscription.create({
@@ -149,13 +143,15 @@ export default async (accessToken, userId) => {
           subscriptions.push({
             type: "teams-channel",
             teamName: team.displayName,
-            data: teamSub.data
+            data: teamSub.data,
           });
 
           console.log(`✅ Subscribed to team channel messages: ${team.displayName}`);
         } catch (teamError) {
-          console.error(`❌ Failed to subscribe to team ${team.displayName}:`,
-            teamError.response?.data || teamError.message);
+          console.error(
+            `❌ Failed to subscribe to team ${team.displayName}:`,
+            teamError.response?.data || teamError.message,
+          );
         }
       }
     } catch (error) {

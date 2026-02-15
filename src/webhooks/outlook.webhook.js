@@ -1,9 +1,9 @@
 // src/webhooks/outlook.webhook.js
 import axios from "axios";
-import User from "../../database/model/user.js";
-import Subscription from "../../database/model/subscription.js";
-import { ensureValidToken } from "../utils/refreshToken.js";
 import Message from "../../database/model/message.js";
+import Subscription from "../../database/model/subscription.js";
+import User from "../../database/model/user.js";
+import { ensureValidToken } from "../shared/azure/refreshToken.js";
 
 export default async (req, res) => {
   try {
@@ -68,15 +68,12 @@ async function processOutlookNotification(notification) {
   }
 
   try {
-    const messageResponse = await axios.get(
-      `https://graph.microsoft.com/v1.0/me/messages/${messageId}`,
-      {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params: {
-          $select: "subject,from,toRecipients,ccRecipients,bodyPreview,body,receivedDateTime,hasAttachments,importance",
-        },
-      }
-    );
+    const messageResponse = await axios.get(`https://graph.microsoft.com/v1.0/me/messages/${messageId}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: {
+        $select: "subject,from,toRecipients,ccRecipients,bodyPreview,body,receivedDateTime,hasAttachments,importance",
+      },
+    });
 
     const message = messageResponse.data;
     console.log("✅ Fetched Outlook message:", {
@@ -92,8 +89,8 @@ async function processOutlookNotification(notification) {
       subject: message.subject,
       from: message.from?.emailAddress?.name,
       fromEmail: message.from?.emailAddress?.address,
-      to: message.toRecipients?.map(r => r.emailAddress.address),
-      cc: message.ccRecipients?.map(r => r.emailAddress.address),
+      to: message.toRecipients?.map((r) => r.emailAddress.address),
+      cc: message.ccRecipients?.map((r) => r.emailAddress.address),
       content: message.body?.content,
       contentType: message.body?.contentType,
       bodyPreview: message.bodyPreview,

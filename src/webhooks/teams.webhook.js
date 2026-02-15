@@ -1,9 +1,9 @@
 // src/webhooks/teams.webhook.js
 import axios from "axios";
-import User from "../../database/model/user.js";
-import { ensureValidToken } from "../utils/refreshToken.js";
 import Message from "../../database/model/message.js";
 import Subscription from "../../database/model/subscription.js";
+import User from "../../database/model/user.js";
+import { ensureValidToken } from "../shared/azure/refreshToken.js";
 
 export default async (req, res) => {
   try {
@@ -99,7 +99,7 @@ async function processTeamsNotification(notification) {
       `https://graph.microsoft.com/v1.0/me/chats/${chatId}/messages/${messageId}`,
       {
         headers: { Authorization: `Bearer ${accessToken}` },
-      }
+      },
     );
 
     const message = messageResponse.data;

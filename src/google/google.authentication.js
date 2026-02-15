@@ -1,0 +1,17 @@
+import googleConfig from "../../config/google.config.js";
+
+export default async (req, res) => {
+  try {
+    const oAuth2Client = googleConfig();
+
+    const authUrl = oAuth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: ["https://www.googleapis.com/auth/gmail.readonly"],
+    });
+
+    return res.json(authUrl);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
+};
