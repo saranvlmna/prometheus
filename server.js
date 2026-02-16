@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import express from "express";
 import connectDB from "./database/connection.js";
 import googleRouter from "./src/google/router.js";
-import "./shared/cron/renew.subscriptions.js";
+// import "./shared/cron/renew.subscriptions.js";
 import teamsRouter from "./src/teams/router.js";
 import userRouter from "./src/user/router.js";
 import webhookRouter from "./src/webhooks/router.js";
