@@ -3,24 +3,7 @@ import User from "../../database/model/user.js";
 import createGoogleTask from "./lib/tasks.create.js";
 import createGmailDraft from "./lib/gmail.draft.create.js";
 
-
-export const getActions = async (req, res) => {
-    try {
-        const { status, type } = req.query;
-        const filter = {};
-        if (status) filter.status = status;
-        if (type) filter.type = type;
-
-        const actions = await GoogleAction.find(filter).populate("userId", "name email").sort("-createdAt");
-        return res.json(actions);
-    } catch (error) {
-        console.error("Error fetching Google Actions:", error);
-        return res.status(500).json({ error: error.message });
-    }
-};
-
-
-export const updateActionStatus = async (req, res) => {
+export default async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body; // 'approved' or 'declined'
