@@ -30,7 +30,8 @@ export default (req, res) => {
   const params = new URLSearchParams({
     client_id: process.env.AZURE_CLIENT_ID,
     response_type: "code",
-    redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+    redirect_uri: process.env.REDIRECT_URI,
+    // redirect_uri: "https://mhgjm-106-76-181-246.a.free.pinggy.link/user/auth/callback",
     response_mode: "query",
     scope: scopes.join(" "),
     state: state,

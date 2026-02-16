@@ -6,7 +6,12 @@ export default async (req, res) => {
 
     const authUrl = oAuth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: ["https://www.googleapis.com/auth/gmail.readonly"],
+      scope: [
+        "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/chat.messages.readonly",
+        "https://www.googleapis.com/auth/tasks",
+        "https://www.googleapis.com/auth/chat.spaces.readonly",
+      ],
     });
 
     return res.json({ authUrl });
