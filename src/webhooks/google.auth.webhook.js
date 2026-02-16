@@ -54,7 +54,7 @@ export default async (req, res) => {
     const response = await gmail.users.watch({
       userId: "me",
       requestBody: {
-        topicName: "projects/hackathon-bot-487506/topics/gmail-notifications",
+        topicName: "projects/prometheus-487614/subscriptions/hackathon-gmail-read",
         labelIds: ["INBOX"],
       },
     });
