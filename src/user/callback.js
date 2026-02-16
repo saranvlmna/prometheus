@@ -96,13 +96,14 @@ export default async (req, res) => {
       const email = "anuroop0003@gmail.com"
 
       // Update or create user
-      let user = await User.findOne({ azureId: id });
+      let user = await User.findOne({ type: "azure", providerId: id });
       if (!user) {
         user = await User.findOne({ email }); // Fallback to email match
       }
 
       if (user) {
-        user.azureId = id;
+        user.type = "azure";
+        user.providerId = id;
         user.accessToken = access_token;
         user.refreshToken = refresh_token;
         user.expiry = new Date(Date.now() + expires_in * 1000);
@@ -111,7 +112,8 @@ export default async (req, res) => {
         user = await User.create({
           name: displayName,
           email,
-          azureId: id,
+          type: "azure",
+          providerId: id,
           accessToken: access_token,
           refreshToken: refresh_token,
           expiry: new Date(Date.now() + expires_in * 1000),
