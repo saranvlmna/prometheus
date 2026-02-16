@@ -13,6 +13,8 @@ const subscriptionSchema = new mongoose.Schema(
             required: true,
         },
         resource: String,
+        teamId: String,
+        teamName: String,
         changeType: String,
         clientState: String,
         expirationDateTime: Date,
