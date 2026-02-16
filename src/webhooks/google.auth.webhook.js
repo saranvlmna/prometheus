@@ -61,24 +61,30 @@ export default async (req, res) => {
 
     console.log("Watch activated:", response.data);
 
-    // @tom: To subscribe to Google Chat events programmatically:
-    // https://developers.google.com/workspace/chat/workspace-events-api
-    /*
-    const workspaceevents = google.workspaceevents({ version: 'v1', auth: oAuth2Client });
-    const subscription = await workspaceevents.subscriptions.create({
-      requestBody: {
-        targetResource: `//chat.googleapis.com/users/me/spaces`,
-        eventTypes: ['google.workspace.chat.message.v1.created'],
-        notificationEndpoint: {
-          pubsubTopic: 'projects/your-project/topics/your-topic'
-        },
-        payloadOptions: { includeResource: true }
-      }
-    });
-    console.log("Chat subscription created:", subscription.data);
-    */
+    // Subscribe to Google Chat events programmatically:
+    // This allows triggering a webhook when a message is received in personal or group chats.
+    try {
+      const workspaceevents = google.workspaceevents({ version: 'v1', auth: oAuth2Client });
+      const subscription = await workspaceevents.subscriptions.create({
+        requestBody: {
+          targetResource: `//chat.googleapis.com/users/me/spaces`,
+          eventTypes: ['google.workspace.chat.message.v1.created'],
+          notificationEndpoint: {
+            pubsubTopic: process.env.GOOGLE_CHAT_TOPIC // e.g., 'projects/hackathon-bot-487506/topics/chat-notifications'
+          },
+          payloadOptions: { includeResource: true }
+        }
+      });
+      console.log("Chat subscription created:", subscription.data);
+    } catch (chatWatchError) {
+      console.warn("Failed to activate Chat watch:", chatWatchError.message);
+      // We don't throw here to avoid failing the entire Gmail auth flow if Chat watch fails
+    }
 
-    return res.json(response.data);
+    return res.json({
+      gmailWatch: response.data,
+      chatWatch: "Attempted"
+    });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ error: error.message });
