@@ -54,7 +54,7 @@ export default async (req, res) => {
     const response = await gmail.users.watch({
       userId: "me",
       requestBody: {
-        topicName: "projects/prometheus-487614/subscriptions/hackathon-gmail-read",
+        topicName: "projects/prometheus-487614/topics/gmail-notifications",
         labelIds: ["INBOX"],
       },
     });
@@ -64,16 +64,16 @@ export default async (req, res) => {
     // Subscribe to Google Chat events programmatically:
     // This allows triggering a webhook when a message is received in personal or group chats.
     try {
-      const workspaceevents = google.workspaceevents({ version: 'v1', auth: oAuth2Client });
+      const workspaceevents = google.workspaceevents({ version: "v1", auth: oAuth2Client });
       const subscription = await workspaceevents.subscriptions.create({
         requestBody: {
           targetResource: `//chat.googleapis.com/users/me/spaces`,
-          eventTypes: ['google.workspace.chat.message.v1.created'],
+          eventTypes: ["google.workspace.chat.message.v1.created"],
           notificationEndpoint: {
-            pubsubTopic: process.env.GOOGLE_CHAT_TOPIC // e.g., 'projects/hackathon-bot-487506/topics/chat-notifications'
+            pubsubTopic: process.env.GOOGLE_CHAT_TOPIC, // e.g., 'projects/hackathon-bot-487506/topics/chat-notifications'
           },
-          payloadOptions: { includeResource: true }
-        }
+          payloadOptions: { includeResource: true },
+        },
       });
       console.log("Chat subscription created:", subscription.data);
     } catch (chatWatchError) {
@@ -83,7 +83,7 @@ export default async (req, res) => {
 
     return res.json({
       gmailWatch: response.data,
-      chatWatch: "Attempted"
+      chatWatch: "Attempted",
     });
   } catch (error) {
     console.log(error);
