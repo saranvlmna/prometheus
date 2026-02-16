@@ -15,7 +15,12 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    azureId: {
+    type: {
+      type: String,
+      enum: ["azure", "google"],
+      required: false, // Optional for local users
+    },
+    providerId: {
       type: String,
       unique: true,
       sparse: true,
