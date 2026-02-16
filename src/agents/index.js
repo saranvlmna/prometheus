@@ -1,6 +1,8 @@
-import { LlmAgent } from "@google/adk";
+import { LlmAgent, Runner, InMemorySessionService, isFinalResponse } from "@google/adk";
 import { getTools } from "./tools.js";
 import User from "../../database/model/user.js";
+
+const sessionService = new InMemorySessionService();
 
 export default async (source, eventData) => {
     console.log(`Processing ${source} event using @google/adk Agent`);
@@ -19,14 +21,15 @@ export default async (source, eventData) => {
     }
 
     // Get User for Graph Token
-    // We expect the user to be passed in eventData for real-world scenarios
     let userToken;
+    let userId = "unknown_user";
     if (eventData.user) {
         userToken = eventData.user.accessToken;
+        userId = eventData.user.id || eventData.user.email || userId;
     } else {
-        // Fallback for testing/Outlook (if not updated yet)
         const user = await User.findOne().sort({ updatedAt: -1 });
         userToken = user?.accessToken;
+        userId = user?._id.toString() || userId;
     }
 
     // Initialize Tools with User Token
@@ -35,7 +38,7 @@ export default async (source, eventData) => {
     // Initialize Agent
     const agent = new LlmAgent({
         name: "productivity_assistant",
-        model: "gemini-pro", // or gemini-1.5-pro-latest
+        model: "gemini-pro",
         description: "Helps users manage tasks, meetings, and issues.",
         instruction: `You are a helpful office assistant. Analyze the user's message and perform the necessary actions using the available tools.
                   If the user wants to create a task, use 'create_todo_task'.
@@ -44,11 +47,26 @@ export default async (source, eventData) => {
         tools: agentTools,
     });
 
+    const runner = new Runner({
+        agent,
+        appName: "productivity_app",
+        sessionService
+    });
+
     console.log("Analyzing content:", messageContent);
 
     try {
-        const response = await agent.run(messageContent);
-        console.log("Agent Response:", response);
+        const events = runner.runAsync({
+            userId,
+            sessionId: `session_${source}_${eventData.id || "default"}`,
+            newMessage: { role: "user", parts: [{ text: messageContent }] }
+        });
+
+        for await (const event of events) {
+            if (isFinalResponse(event) && event.content?.parts?.[0]?.text) {
+                console.log("Agent Final Response:", event.content.parts[0].text);
+            }
+        }
     } catch (error) {
         console.error("Agent Execution Error:", error);
     }

@@ -1,4 +1,6 @@
-import { LlmAgent } from "@google/adk";
+import { LlmAgent, Runner, InMemorySessionService, isFinalResponse } from "@google/adk";
+
+const sessionService = new InMemorySessionService();
 
 export const runChatAnalysis = async (chatHistory) => {
   const agent = new LlmAgent({
@@ -33,12 +35,32 @@ export const runChatAnalysis = async (chatHistory) => {
     `,
   });
 
+  const runner = new Runner({
+    agent,
+    appName: "chat_analysis_app",
+    sessionService
+  });
+
   const prompt = `Chat History (most recent first):\n${chatHistory.map(m => `${m.sender}: ${m.text}`).join('\n')}`;
 
   try {
-    const rawResponse = await agent.run(prompt);
+    const events = runner.runAsync({
+      userId: "system",
+      sessionId: "current_chat",
+      newMessage: { role: "user", parts: [{ text: prompt }] }
+    });
+
+    let finalAnswer = "";
+    for await (const event of events) {
+      if (isFinalResponse(event) && event.content?.parts?.[0]?.text) {
+        finalAnswer = event.content.parts[0].text;
+      }
+    }
+
+    if (!finalAnswer) return { type: "none", confidence: 0, reasoning: "No response from agent" };
+
     // Cleanup response if LLM wraps it in markdown blocks
-    const jsonString = rawResponse.replace(/```json/g, '').replace(/```/g, '').trim();
+    const jsonString = finalAnswer.replace(/```json/g, '').replace(/```/g, '').trim();
     return JSON.parse(jsonString);
   } catch (error) {
     console.error("Agent Analysis Error:", error);
