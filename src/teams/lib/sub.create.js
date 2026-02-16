@@ -6,7 +6,7 @@ import { getAppOnlyToken } from "../../../shared/azure/getAppToken.js";
 export default async (accessToken, userId) => {
   try {
     // const webhookUrl = process.env.WEBHOOK_PUBLIC_URL;
-    const webhookUrl = "https://vtnxs-106-76-181-246.a.free.pinggy.link";
+    const webhookUrl = "https://mbsck-106-76-185-193.a.free.pinggy.link";
     if (!webhookUrl) {
       throw new Error("WEBHOOK_PUBLIC_URL environment variable is not set");
     }
@@ -37,7 +37,7 @@ export default async (accessToken, userId) => {
           resource: `users/${userPrincipalName}/chats/getAllMessages`,
           expirationDateTime: chatExpiration,
           clientState: `secureChatsValue-${userId}`, // Include userId for easier routing in webhook
-          includeResourceData: false,
+          // includeResourceData: false,
         },
         {
           headers: {
