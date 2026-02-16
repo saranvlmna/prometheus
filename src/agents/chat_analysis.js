@@ -44,6 +44,12 @@ export const runChatAnalysis = async (chatHistory) => {
   const prompt = `Chat History (most recent first):\n${chatHistory.map(m => `${m.sender}: ${m.text}`).join('\n')}`;
 
   try {
+    await sessionService.createSession({
+      appName: "chat_analysis_app",
+      userId: "system",
+      sessionId: "current_chat"
+    });
+
     const events = runner.runAsync({
       userId: "system",
       sessionId: "current_chat",

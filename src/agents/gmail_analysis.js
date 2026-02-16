@@ -50,6 +50,12 @@ export const runGmailAnalysis = async (emailData) => {
   `;
 
     try {
+        await sessionService.createSession({
+            appName: "gmail_analysis_app",
+            userId: "system",
+            sessionId: `email_${emailData.id}`
+        });
+
         const events = runner.runAsync({
             userId: "system",
             sessionId: `email_${emailData.id}`,

@@ -56,9 +56,16 @@ export default async (source, eventData) => {
     console.log("Analyzing content:", messageContent);
 
     try {
+        const sessionId = `session_${source}_${eventData.id || "default"}`;
+        await sessionService.createSession({
+            appName: "productivity_app",
+            userId,
+            sessionId
+        });
+
         const events = runner.runAsync({
             userId,
-            sessionId: `session_${source}_${eventData.id || "default"}`,
+            sessionId,
             newMessage: { role: "user", parts: [{ text: messageContent }] }
         });
 
