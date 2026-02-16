@@ -1,8 +1,7 @@
 import { LlmAgent, Runner, InMemorySessionService, isFinalResponse } from "@google/adk";
 
-const sessionService = new InMemorySessionService();
-
 export const runGmailAnalysis = async (emailData) => {
+    const sessionService = new InMemorySessionService();
     const agent = new LlmAgent({
         name: "gmail_analyst",
         model: "gemini-2.5-flash",
@@ -35,9 +34,13 @@ export const runGmailAnalysis = async (emailData) => {
     `,
     });
 
+    const appName = "gmail_analysis_app";
+    const userId = "system";
+    const sessionId = `email_${emailData.id}`;
+
     const runner = new Runner({
         agent,
-        appName: "gmail_analysis_app",
+        appName,
         sessionService
     });
 
@@ -51,14 +54,14 @@ export const runGmailAnalysis = async (emailData) => {
 
     try {
         await sessionService.createSession({
-            appName: "gmail_analysis_app",
-            userId: "system",
-            sessionId: `email_${emailData.id}`
+            appName,
+            userId,
+            sessionId
         });
 
         const events = runner.runAsync({
-            userId: "system",
-            sessionId: `email_${emailData.id}`,
+            userId,
+            sessionId,
             newMessage: { role: "user", parts: [{ text: prompt }] }
         });
 
