@@ -9,9 +9,12 @@ export default async (req, res) => {
       scope: ["https://www.googleapis.com/auth/gmail.readonly"],
     });
 
-    return res.json(authUrl);
+    return res.json({ authUrl });
   } catch (error) {
-    console.log(error);
-    throw error;
+    console.error("Google auth error:", error);
+    return res.status(500).json({
+      error: "Failed to generate auth URL",
+      message: error.message
+    });
   }
 };

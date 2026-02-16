@@ -1,10 +1,24 @@
+import app from '../app.js';
 import connectDB from '../database/connection.js';
-import app from '../server.js';
+
+// Cache database connection for serverless
+let isConnected = false;
 
 export default async function handler(req, res) {
-    // Ensure database is connected before handling the request
-    await connectDB();
+    try {
+        // Ensure database is connected before handling the request
+        if (!isConnected) {
+            await connectDB();
+            isConnected = true;
+        }
 
-    // Forward request to Express app
-    return app(req, res);
+        // Forward request to Express app
+        return app(req, res);
+    } catch (error) {
+        console.error('Serverless function error:', error);
+        return res.status(500).json({
+            error: 'Internal Server Error',
+            message: error.message
+        });
+    }
 }
