@@ -2,10 +2,9 @@ import { LlmAgent, Runner, InMemorySessionService, isFinalResponse } from "@goog
 import { getTools } from "./tools.js";
 import User from "../../database/model/user.js";
 
-const sessionService = new InMemorySessionService();
-
 export default async (source, eventData) => {
     console.log(`Processing ${source} event using @google/adk Agent`);
+    const sessionService = new InMemorySessionService();
 
     let messageContent = "";
     // Extract content
@@ -47,18 +46,27 @@ export default async (source, eventData) => {
         tools: agentTools,
     });
 
+    const appName = "productivity_app";
+    const sessionId = `session_${source}_${eventData.id || "default"}`;
+
     const runner = new Runner({
         agent,
-        appName: "productivity_app",
+        appName,
         sessionService
     });
 
     console.log("Analyzing content:", messageContent);
 
     try {
+        await sessionService.createSession({
+            appName,
+            userId,
+            sessionId
+        });
+
         const events = runner.runAsync({
             userId,
-            sessionId: `session_${source}_${eventData.id || "default"}`,
+            sessionId,
             newMessage: { role: "user", parts: [{ text: messageContent }] }
         });
 

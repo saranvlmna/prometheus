@@ -1,16 +1,15 @@
 import { LlmAgent, Runner, InMemorySessionService, isFinalResponse } from "@google/adk";
 
-const sessionService = new InMemorySessionService();
-
 export const runChatAnalysis = async (chatHistory) => {
+  const sessionService = new InMemorySessionService();
   const agent = new LlmAgent({
     name: "chat_analyst",
     model: "gemini-2.5-flash",
     description: "Analyzes chat conversations to identify tasks or email drafting needs.",
     instruction: `
-      You are an expert at analyzing chat conversations. 
+      You are an expert at analyzing chat conversations.
       Analyze the provided chat history (last 5 messages) and classify the intent into one of: 'task', 'mail', or 'none'.
-      
+
       - 'task': If the conversation implies a commitment, assignment, or action that needs tracking.
       - 'mail': If the conversation suggests a need to follow up with someone via email or send a summary.
       - 'none': If it's general chat, social, or doesn't require structured action.
@@ -18,12 +17,12 @@ export const runChatAnalysis = async (chatHistory) => {
       If you classify as 'task' or 'mail', extract the necessary content in the following JSON format:
       {
         "type": "task" | "mail" | "none",
-        "confidence": number (0 to 1),
+        "confidence": number,
         "content": {
           // For task:
           "title": "Short descriptive title",
           "notes": "Context and details from chat"
-          
+
           // For mail:
           "subject": "Email subject",
           "body": "Email body content"
@@ -35,18 +34,28 @@ export const runChatAnalysis = async (chatHistory) => {
     `,
   });
 
+  const appName = "chat_analysis_app";
+  const userId = "system";
+  const sessionId = "current_chat";
+
   const runner = new Runner({
     agent,
-    appName: "chat_analysis_app",
+    appName,
     sessionService
   });
 
   const prompt = `Chat History (most recent first):\n${chatHistory.map(m => `${m.sender}: ${m.text}`).join('\n')}`;
 
   try {
+    await sessionService.createSession({
+      appName,
+      userId,
+      sessionId
+    });
+
     const events = runner.runAsync({
-      userId: "system",
-      sessionId: "current_chat",
+      userId,
+      sessionId,
       newMessage: { role: "user", parts: [{ text: prompt }] }
     });
 
