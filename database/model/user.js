@@ -15,24 +15,15 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
 
-    type: {
-      type: String,
-      enum: ["azure", "google"],
-      required: false, // Optional for local users
-    },
-    providerId: {
-      type: String,
-      unique: true,
-      sparse: true,
-    },
-    accessToken: String,
-    refreshToken: String,
-    expiry: Date,
     password: {
       type: String,
       required: false,
       minlength: 6,
       select: false,
+    },
+    // Generic preferences that apply to the user regardless of login method
+    preferences: {
+      autoExecuteActions: { type: Boolean, default: false },
     },
   },
   {

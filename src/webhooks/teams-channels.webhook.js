@@ -52,7 +52,7 @@ async function processChannelNotification(notification) {
   const user = await User.findById(subscription.userId);
   if (!user) return;
 
-  const accessToken = await ensureValidToken(user);
+  const accessToken = await ensureValidToken(user._id, "azure");
 
   // Resource format: "Teams('teamId')/Channels('channelId')/Messages('messageId')"
   const resourceMatch = notification.resource.match(

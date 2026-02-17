@@ -1,70 +1,41 @@
 import axios from "axios";
 import qs from "qs";
+import Subscription from "../../database/model/subscription.js";
 
-export const ensureValidToken = async (user) => {
-    // If token is still valid (with 5 min buffer), return existing token
-    // user.tokenStats.expiresIn is usually seconds/minutes from issuance?
-    // We need to check against expiration time.
-    // Assuming user model stores accessToken, refreshToken, and expiration time.
-    // If not, we should probably fetch it.
+/**
+ * Ensures a valid token exists for the given user and provider.
+ * If the current token is close to expiry or we suspect it's old, it refreshes it.
+ * 
+ * @param {import("mongoose").Types.ObjectId} userId 
+ * @param {string} provider - "google" or "azure"
+ */
+export const ensureValidToken = async (userId, provider = "azure") => {
+    const sub = await Subscription.findOne({ userId, provider });
 
-    // NOTE: Based on typical OAuth implementation:
-    // user.accessToken
-    // user.refreshToken
-    // user.tokenParams.expires_in (seconds) - tricky to use without issuance time
-    // user.tokenParams.ext_expires_in (seconds)
-
-    // Better approach: try to use minimal checking or just refresh if we suspect it's old.
-    // Ideally, we should store `expiresAt` in the database.
-
-    // Let's implement a safe refresh if we can't determine validity or simply always refresh if it's been a while.
-    // For now, let's assume we need to refresh if we don't have an expiration time or if it's close.
-
-    // Simplest strategy: Try to use the token. If 401, refresh and retry (that's reactive).
-    // Proactive strategy (better for background jobs): Refresh if close to expiry.
-
-    // Since we don't see the User model structure for expiration, let's assume we might need to refresh.
-    // We will try to refresh if detailed expiration info is missing or if we know it's expired.
-
-    // Implementation:
-    // 1. If we have refreshToken, try to get new accessToken
-    // 2. Update user in DB
-    // 3. Return new accessToken
-
-    if (!user.refreshToken) {
-        console.warn("User has no refresh token, cannot refresh.");
-        return user.accessToken;
+    if (!sub || !sub.refreshToken) {
+        console.warn(`[TokenRefresh] No ${provider} subscription or refresh token for user ${userId}`);
+        return sub?.accessToken;
     }
 
-    // TODO: Check if actually expired if we have that data. 
-    // For now, let's just implement the refresh logic function which can be called safely.
-
     try {
-        // Check if token is expired (heuristic)
-        // If we saved 'updatedAt' for the token...
-        // Let's assume the caller logic calls this because they suspect it might be needed
-        // OR we can just do a check.
-
-        // Microsoft tokens usually last 60-90 mins.
-        // Let's implement the refresh call.
-
-        return await refreshAccessToken(user);
-
+        // For simplicity, we currently just refresh if this function is called.
+        // In a more advanced version, we'd check sub.expiry (Date.now() + 5 mins).
+        return await refreshAccessToken(sub);
     } catch (error) {
-        console.error("Error ensuring valid token:", error.message);
-        return user.accessToken; // Fallback to existing
+        console.error(`[TokenRefresh] Error ensuring valid ${provider} token:`, error.message);
+        return sub.accessToken; // Fallback to existing
     }
 };
 
-const refreshAccessToken = async (user) => {
+const refreshAccessToken = async (sub) => {
     try {
         const tokenEndpoint = `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`;
 
         const requestBody = {
             client_id: process.env.AZURE_CLIENT_ID,
             client_secret: process.env.AZURE_CLIENT_SECRET,
-            scope: "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.ReadWrite Chat.Read Chat.ReadBasic Tasks.ReadWrite", // Match scopes from auth.azure.js
-            refresh_token: user.refreshToken,
+            scope: "offline_access User.Read Mail.Read Mail.ReadBasic Calendars.ReadWrite Chat.Read Chat.ReadBasic Tasks.ReadWrite",
+            refresh_token: sub.refreshToken,
             grant_type: "refresh_token",
         };
 
@@ -76,19 +47,23 @@ const refreshAccessToken = async (user) => {
 
         const { access_token, refresh_token, expires_in } = response.data;
 
-        // Update user
-        user.accessToken = access_token;
+        // Update Subscription
+        sub.accessToken = access_token;
         if (refresh_token) {
-            user.refreshToken = refresh_token; // Refresh tokens can rotate
+            sub.refreshToken = refresh_token;
         }
-        // Ideally update expiration here too
 
-        await user.save();
-        console.log(`🔄 Refreshed access token for user ${user._id}`);
+        // Calculate expiry if expires_in is provided
+        if (expires_in) {
+            sub.expiry = new Date(Date.now() + expires_in * 1000);
+        }
+
+        await sub.save();
+        console.log(`[TokenRefresh] 🔄 Refreshed ${sub.provider} access token for user ${sub.userId}`);
 
         return access_token;
     } catch (error) {
-        console.error("❌ Failed to refresh token:", error.response?.data || error.message);
+        console.error(`[TokenRefresh] ❌ Failed to refresh ${sub.provider} token:`, error.response?.data || error.message);
         throw error;
     }
 };

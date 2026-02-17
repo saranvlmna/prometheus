@@ -1,11 +1,13 @@
 import listChatMessages from "../google/lib/chat.messages.list.js";
 import { runChatAnalysis } from "../agents/chat_analysis.js";
-import GoogleAction from "../../database/model/google_action.js";
+import Action from "../../database/model/action.model.js";
 import User from "../../database/model/user.js";
+import Subscription from "../../database/model/subscription.js";
+import googleConfig from "../../config/google.config.js";
 
 export default async (req, res) => {
     try {
-        console.log("Google Chat Webhook received");
+        console.log("[ChatWebhook] Received event");
 
         const pubsubMessage = req.body.message;
         let event;
@@ -18,11 +20,9 @@ export default async (req, res) => {
             event = req.body;
         }
 
-        console.log("Chat Event:", JSON.stringify(event, null, 2));
+        console.log("[ChatWebhook] Event:", JSON.stringify(event, null, 2));
 
         // Handle space message events
-        // For Workspace Events API, the type might be 'google.workspace.chat.message.v1.created'
-        // For direct Chat App events, the type is 'MESSAGE'
         const isMessageEvent = event.type === "MESSAGE" ||
             event.type === "google.workspace.chat.message.v1.created";
 
@@ -31,20 +31,33 @@ export default async (req, res) => {
             const space = event.space;
             const text = message?.text || "No text";
 
-            console.log(`New message in ${space?.name || "unknown space"}: ${text}`);
+            console.log(`[ChatWebhook] New message in ${space?.name || "unknown space"}: ${text}`);
 
-            // 1. Get User/Tokens (Placeholder logic - @tom to ensure user ID/Email mapping)
-            // Assuming we can find the user by email or some mapping from the Chat event
-            const user = await User.findOne().sort({ updatedAt: -1 }); // Fallback for demo
-            if (!user) {
-                console.warn("No user found for processing Chat event");
+            // 1. Get User/Tokens
+            // Find the most recent user who has a Google subscription (fallback logic)
+            // Ideally, we'd map the space or user ID from the event to a specific user.
+            const sub = await Subscription.findOne({ provider: "google" }).sort({ lastLogin: -1 });
+            if (!sub) {
+                console.warn("[ChatWebhook] No user with Google subscription found for processing");
                 return res.status(200).send("OK");
             }
 
-            const tokens = { access_token: user.accessToken, refresh_token: user.refreshToken };
+            const user = await User.findById(sub.userId);
+            const tokens = { access_token: sub.accessToken, refresh_token: sub.refreshToken };
+
+            const oAuth2Client = googleConfig();
+            oAuth2Client.setCredentials(tokens);
+
+            // Auto-refresh token if needed
+            oAuth2Client.on("tokens", async (newTokens) => {
+                if (newTokens.access_token) {
+                    await Subscription.findByIdAndUpdate(sub._id, { accessToken: newTokens.access_token });
+                    console.log(`[ChatWebhook] Rotated access token`);
+                }
+            });
 
             // 2. Fetch last 5 messages for context
-            const recentMessages = await listChatMessages(tokens, space.name, 5);
+            const recentMessages = await listChatMessages(oAuth2Client, space.name, 5);
             const normalizedContext = recentMessages.map(m => ({
                 sender: m.sender?.displayName || "Unknown",
                 text: m.text,
@@ -53,29 +66,34 @@ export default async (req, res) => {
 
             // 3. Analyze with AI Agent
             const analysis = await runChatAnalysis(normalizedContext);
-            console.log("Analysis Result:", analysis);
+            console.log("[ChatWebhook] Analysis Result:", analysis);
 
-            // 4. If actionable, save as 'pending'
+            // 4. If actionable, save as 'pending' using unified Action model
             if (analysis.type === "task" || analysis.type === "mail") {
-                const newAction = new GoogleAction({
+                const actionType = analysis.type === "task" ? "google_task" : "gmail_reply";
+
+                await Action.create({
                     userId: user._id,
-                    type: analysis.type,
-                    status: "pending",
-                    content: analysis.content,
-                    reasoning: analysis.reasoning,
-                    reference: {
+                    source: "google_chat",
+                    sourceId: message.name,
+                    context: {
                         spaceName: space.name,
-                        messageName: message.name
-                    }
+                        messageText: text
+                    },
+                    type: actionType,
+                    status: "pending",
+                    title: analysis.content,
+                    description: analysis.reasoning,
+                    payload: { content: analysis.content },
+                    reasoning: analysis.reasoning
                 });
-                await newAction.save();
-                console.log(`Pending ${analysis.type} action saved.`);
+                console.log(`[ChatWebhook] Pending ${actionType} action saved.`);
             }
         }
 
         return res.status(200).send("OK");
     } catch (error) {
-        console.error("Error in Google Chat Webhook:", error);
+        console.error("[ChatWebhook] Error:", error);
         return res.status(500).send("Error");
     }
 };

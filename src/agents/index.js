@@ -1,6 +1,8 @@
 import { azureOpenAIClient as client } from "./lib/azure_openai.js";
 import { getTools } from "./tools.js";
 import User from "../../database/model/user.js";
+import Subscription from "../../database/model/subscription.js";
+import { ensureValidToken } from "../../shared/azure/refreshToken.js";
 
 const deployment = process.env.AZURE_DEPLOYMENT;
 
@@ -22,11 +24,17 @@ export default async (source, eventData) => {
 
     // Get User for Graph Token
     let userToken;
-    if (eventData.user) {
-        userToken = eventData.user.accessToken;
-    } else {
+    let userId = eventData.user?._id || eventData.userId;
+
+    if (!userId) {
+        // Fallback or find user by email if possible?
+        // For now, let's try to find the most recent user if none provided (legacy/test support)
         const user = await User.findOne().sort({ updatedAt: -1 });
-        userToken = user?.accessToken;
+        userId = user?._id;
+    }
+
+    if (userId) {
+        userToken = await ensureValidToken(userId, "azure");
     }
 
     // Initialize Tools with User Token
