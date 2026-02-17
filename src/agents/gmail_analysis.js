@@ -2,38 +2,35 @@ import { azureOpenAIClient as client } from "./lib/azure_openai.js";
 
 const deployment = process.env.AZURE_DEPLOYMENT;
 
-/**
- * Gmail Analysis Agent to determine intent and extract structured data from emails using Azure OpenAI.
- */
+
 export const runGmailAnalysis = async (emailData) => {
   const prompt = `
-    Analyze the provided email (From, Subject, Body) and classify the intent into one of: 'task', 'mail', or 'none'.
+    Analyze the provided email and classify the intent into one of: 'task', 'mail', or 'none'.
     
-    - 'task': If the email implies a commitment, assignment, action or ToDo reminder that needs tracking.
-    - 'mail': If the email suggests a need to follow up with someone else or send a summary/reply.
-    - 'none': If it's a notification, newsletters, or doesn't require structured action.
+    INTENT DEFINITIONS:
+    - 'task': The email implies a commitment, assignment, action, or To-Do reminder that needs tracking.
+    - 'mail': The email suggests a need to follow up with someone, send a summary, or reply.
+    - 'none': General notifications, newsletters, or emails that don't require specific action.
 
-    If you classify as 'task' or 'mail', extract the necessary content in the following JSON format:
+    OUTPUT FORMAT:
+    Return ONLY a structured JSON object with this exact shape:
     {
       "type": "task" | "mail" | "none",
-      "confidence": number,
-      "title": "Short Title about the action",
-      "description": "Short description about the action",
+      "confidence": number (0 to 1),
+      "title": "A concise, actionable title for the event",
+      "description": "A brief summary of the action required",
       "content": {
-        // For task:
-        "title": "Short descriptive title based on email",
+        // If type is 'task':
         "notes": "Context and key points extracted from the email body"
         
-        // For mail:
-        "subject": "Email subject for the draft",
-        "body": "Proposed email body content for follow-up"
+        // If type is 'mail':
+        "subject": "Suggested email subject for follow-up",
+        "body": "A draft of the proposed follow-up email"
       },
-      "reasoning": "Brief explanation of why this classification was chosen"
+      "reasoning": "A short sentence explaining your classification"
     }
 
-    Return ONLY the JSON object.
-
-    Email Data:
+    EMAIL DATA:
     From: ${emailData.from}
     Subject: ${emailData.subject}
     Snippet: ${emailData.snippet}
@@ -44,7 +41,7 @@ export const runGmailAnalysis = async (emailData) => {
     const completion = await client.chat.completions.create({
       model: deployment,
       messages: [
-        { role: "system", content: "You are an expert email analyst. Respond only with structured JSON." },
+        { role: "system", content: "You are an expert email analyst. You always respond with valid, structured JSON." },
         { role: "user", content: prompt }
       ],
       response_format: { type: "json_object" }

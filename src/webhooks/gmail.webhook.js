@@ -84,6 +84,8 @@ export default async (req, res) => {
         if ((analysis.type === "task" || analysis.type === "mail") && analysis.confidence > 0.6) {
           const newAction = new GoogleAction({
             userId: user._id,
+            title: analysis.title,
+            description: analysis.description,
             type: analysis.type,
             status: "pending",
             content: analysis.content,

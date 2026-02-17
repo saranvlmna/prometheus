@@ -7,6 +7,8 @@ const googleActionSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
+        title: String,
+        description: String,
         type: {
             type: String,
             enum: ["task", "mail"],
@@ -25,6 +27,8 @@ const googleActionSchema = new mongoose.Schema(
             spaceName: String,
             threadName: String,
             messageName: String,
+            threadId: String,
+            messageId: String,
         },
         error: String,
         reasoning: String,
