@@ -120,7 +120,7 @@ export const runGmailAnalysis = async (emailData) => {
 
     // Filter out low-confidence actions
     parsed.actions = parsed.actions.filter((a) => (a.confidence ?? 1) >= 0.6);
-
+    console.log("[GmailAnalysisAgent] Analysis completed:", parsed);
     return parsed;
   } catch (error) {
     console.error("[GmailAnalysisAgent] Error:", error);
