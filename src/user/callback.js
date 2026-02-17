@@ -1,5 +1,6 @@
 import axios from "axios";
 import User from "../../database/model/user.js";
+import Subscription from "../../database/model/subscription.js";
 
 export default async (req, res) => {
   const { code } = req.query;
@@ -9,7 +10,7 @@ export default async (req, res) => {
   }
 
   try {
-    // Exchange code for tokens
+    // 1. Exchange code for tokens
     const tokenResponse = await axios.post(
       `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
       new URLSearchParams({
@@ -28,7 +29,7 @@ export default async (req, res) => {
           "Tasks.ReadWrite",
         ].join(" "),
         code,
-        redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+        redirect_uri: process.env.REDIRECT_URI || process.env.GOOGLE_REDIRECT_URI, // fallback if needed
         grant_type: "authorization_code",
         client_secret: process.env.AZURE_CLIENT_SECRET,
       }),
@@ -39,98 +40,52 @@ export default async (req, res) => {
 
     const { access_token, refresh_token, expires_in } = tokenResponse.data;
 
-    // Get user profile
+    // 2. Get user profile
     const profileResponse = await axios.get("https://graph.microsoft.com/v1.0/me", {
       headers: { Authorization: `Bearer ${access_token}` },
     });
 
     const { id, displayName, mail, userPrincipalName } = profileResponse.data;
-    const email = mail;
+    const email = mail || userPrincipalName;
 
-    // Update or create user
-    let user = await User.findOne({ azureId: id });
+    if (!email) {
+      return res.status(400).send("No email found in Microsoft profile");
+    }
+
+    // 3. Manage User (Identity)
+    let user = await User.findOne({ email });
     if (!user) {
-      user = await User.findOne({ email }); // Fallback to email match
+      user = await User.create({ name: displayName, email });
+      console.log("[AzureAuth] Created new user:", email);
+    } else {
+      console.log("[AzureAuth] Found existing user:", email);
     }
 
-    try {
-      // Exchange code for tokens
-      const tokenResponse = await axios.post(
-        `https://login.microsoftonline.com/${process.env.AZURE_TENANT_ID}/oauth2/v2.0/token`,
-        new URLSearchParams({
-          client_id: process.env.AZURE_CLIENT_ID,
-          scope: [
-            "openid",
-            "profile",
-            "email",
-            "offline_access",
-            "User.Read",
-            "Mail.Read",
-            "Mail.ReadBasic",
-            "Calendars.ReadWrite",
-            "Chat.Read",
-            "Chat.ReadBasic",
-            "Tasks.ReadWrite",
+    // 4. Manage Subscription (Credentials)
+    let sub = await Subscription.findOne({ userId: user._id, provider: "azure" });
 
-          ].join(" "),
-          code,
-          redirect_uri: process.env.REDIRECT_URI,
-          // redirect_uri: "https://mhgjm-106-76-181-246.a.free.pinggy.link/user/auth/callback",
-          grant_type: "authorization_code",
-          client_secret: process.env.AZURE_CLIENT_SECRET,
-        }),
-        {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        },
-      );
+    const subData = {
+      userId: user._id,
+      provider: "azure",
+      providerId: id,
+      accessToken: access_token,
+      refreshToken: refresh_token || sub?.refreshToken,
+      expiry: expires_in ? new Date(Date.now() + expires_in * 1000) : undefined,
+      lastLogin: new Date(),
+    };
 
-      const { access_token, refresh_token, expires_in } = tokenResponse.data;
-
-      // Get user profile
-      const profileResponse = await axios.get("https://graph.microsoft.com/v1.0/me", {
-        headers: { Authorization: `Bearer ${access_token}` },
-      });
-
-      const { id, displayName, mail, userPrincipalName } = profileResponse.data;
-      console.log(profileResponse.data);
-      const email = "anuroop0003@gmail.com"
-
-      // Update or create user
-      let user = await User.findOne({ type: "azure", providerId: id });
-      if (!user) {
-        user = await User.findOne({ email }); // Fallback to email match
-      }
-
-      if (user) {
-        user.type = "azure";
-        user.providerId = id;
-        user.accessToken = access_token;
-        user.refreshToken = refresh_token;
-        user.expiry = new Date(Date.now() + expires_in * 1000);
-        await user.save();
-      } else {
-        user = await User.create({
-          name: displayName,
-          email,
-          type: "azure",
-          providerId: id,
-          accessToken: access_token,
-          refreshToken: refresh_token,
-          expiry: new Date(Date.now() + expires_in * 1000),
-        });
-      }
-
-      // In a real app, you would create a session or JWT for your own app here
-      res.send(`Login successful! Welcome ${user.name}`);
-    } catch (error) {
-      console.error("Auth callback error:", error.response?.data || error.message);
-      res.status(500).send("Authentication failed");
+    if (sub) {
+      Object.assign(sub, subData);
+      await sub.save();
+      console.log("[AzureAuth] Updated existing subscription for", email);
+    } else {
+      sub = await Subscription.create(subData);
+      console.log("[AzureAuth] Created new subscription for", email);
     }
 
-    // In a real app, you would create a session or JWT for your own app here
-    res.send(`Login successful! Welcome ${user.name}`);
+    res.send(`Login successful! Welcome ${user.name}. Your Azure subscription is now active.`);
   } catch (error) {
-    console.error("Auth callback error:", error.response?.data || error.message);
+    console.error("[AzureAuth] Callback Error:", error.response?.data || error.message);
     res.status(500).send("Authentication failed");
   }
 };

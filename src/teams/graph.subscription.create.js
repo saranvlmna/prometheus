@@ -1,23 +1,27 @@
 import subCreate from "./lib/sub.create.js";
 import User from "../../database/model/user.js";
+import Subscription from "../../database/model/subscription.js";
+import { ensureValidToken } from "../../shared/azure/refreshToken.js";
 
 export default async (req, res) => {
   try {
-    // In a real app, get user from session or auth middleware.
-    // For this MVP backend, we'll expect an email 
     const { email } = req.body;
-    let user;
-    if (email) {
-      user = await User.findOne({ email });
-    } else {
+    if (!email) {
       return res.status(401).json({ message: "Email is required" });
     }
 
-    if (!user || !user.accessToken) {
-      return res.status(401).json({ message: "User not authenticated or found" });
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const subscription = await subCreate(user.accessToken, user._id);
+    const accessToken = await ensureValidToken(user._id, "azure");
+
+    if (!accessToken) {
+      return res.status(401).json({ message: "Azure subscription or token not found" });
+    }
+
+    const subscription = await subCreate(accessToken, user._id);
     return res.json(subscription);
   } catch (error) {
     console.log(error);
