@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import express from "express";
+import cors from "cors";
 import googleRouter from "./src/google/router.js";
 import teamsRouter from "./src/teams/router.js";
 import userRouter from "./src/user/router.js";
@@ -8,6 +9,8 @@ import webhookRouter from "./src/webhooks/router.js";
 dotenv.config();
 
 const app = express();
+
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
