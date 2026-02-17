@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
-    res.send("Prometheus Health Is Ok");
+    res.send("Prometheus Health Is Ok and v00.1");
 });
 
 app.use("/webhook", webhookRouter);
