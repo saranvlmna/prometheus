@@ -1,48 +1,58 @@
-import { FunctionTool } from "@google/adk";
-import { z } from "zod";
 import * as actions from "./actions.js";
 
 export const getTools = (userToken) => {
-    const createTodoTool = new FunctionTool({
-        name: "create_todo_task",
-        description: "Create a new task in Microsoft To-Do.",
-        parameters: z.object({
-            title: z.string().describe("The title of the task"),
-            description: z.string().optional().describe("Details or description of the task"),
-            dueDate: z.string().optional().describe("The due date/time in ISO format (YYYY-MM-DDTHH:mm:ss)"),
-        }),
-        execute: async ({ title, description, dueDate }) => {
-            return await actions.createTodoTask({ title, description, dueDate }, userToken);
+    return [
+        {
+            type: "function",
+            function: {
+                name: "create_todo_task",
+                description: "Create a new task in Microsoft To-Do.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        title: { type: "string", description: "The title of the task" },
+                        description: { type: "string", description: "Details or description of the task" },
+                        dueDate: { type: "string", description: "The due date/time in ISO format (YYYY-MM-DDTHH:mm:ss)" }
+                    },
+                    required: ["title"]
+                }
+            },
+            execute: async (args) => await actions.createTodoTask(args, userToken)
         },
-    });
-
-    const scheduleMeetingTool = new FunctionTool({
-        name: "schedule_meeting",
-        description: "Schedule a meeting or event in the calendar.",
-        parameters: z.object({
-            subject: z.string().describe("The subject or title of the meeting"),
-            description: z.string().optional().describe("Agenda or description of the meeting"),
-            start: z.string().describe("The start time in ISO format (YYYY-MM-DDTHH:mm:ss)"),
-            end: z.string().optional().describe("The end time in ISO format."),
-        }),
-        execute: async ({ subject, description, start, end }) => {
-            return await actions.createCalendarEvent({ subject, description, start, end }, userToken);
+        {
+            type: "function",
+            function: {
+                name: "schedule_meeting",
+                description: "Schedule a meeting or event in the calendar.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        subject: { type: "string", description: "The subject or title of the meeting" },
+                        description: { type: "string", description: "Agenda or description of the meeting" },
+                        start: { type: "string", description: "The start time in ISO format (YYYY-MM-DDTHH:mm:ss)" },
+                        end: { type: "string", description: "The end time in ISO format." }
+                    },
+                    required: ["subject", "start"]
+                }
+            },
+            execute: async (args) => await actions.createCalendarEvent(args, userToken)
         },
-    });
-
-    const createJiraIssueTool = new FunctionTool({
-        name: "create_jira_issue",
-        description: "Create a bug report or issue in Jira.",
-        parameters: z.object({
-            summary: z.string().describe("A brief summary of the issue"),
-            description: z.string().optional().describe("Detailed description of the bug or issue"),
-            projectKey: z.string().optional().describe("The project key (e.g., 'PROJ')."),
-        }),
-        execute: async ({ summary, description, projectKey }) => {
-            // Jira doesn't use the userToken for Basic Auth but we keep the pattern consistent if needed later
-            return await actions.createJiraIssue({ summary, description, projectKey });
-        },
-    });
-
-    return [createTodoTool, scheduleMeetingTool, createJiraIssueTool];
+        {
+            type: "function",
+            function: {
+                name: "create_jira_issue",
+                description: "Create a bug report or issue in Jira.",
+                parameters: {
+                    type: "object",
+                    properties: {
+                        summary: { type: "string", description: "A brief summary of the issue" },
+                        description: { type: "string", description: "Detailed description of the bug or issue" },
+                        projectKey: { type: "string", description: "The project key (e.g., 'PROJ')." }
+                    },
+                    required: ["summary"]
+                }
+            },
+            execute: async (args) => await actions.createJiraIssue(args)
+        }
+    ];
 };
