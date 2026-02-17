@@ -52,7 +52,7 @@ async function processOutlookNotification(notification) {
   const user = await User.findById(subscription.userId);
   if (!user) return;
 
-  const accessToken = await ensureValidToken(user);
+  const accessToken = await ensureValidToken(user._id, "azure");
 
   // Resource format: "Users/{userId}/Messages/{messageId}"
   const messageId = notification.resourceData?.id;

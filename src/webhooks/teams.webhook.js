@@ -71,7 +71,7 @@ async function processTeamsNotification(notification) {
   }
 
   // Get valid access token
-  const accessToken = await ensureValidToken(user);
+  const accessToken = await ensureValidToken(user._id, "azure");
 
   // Extract chat ID and message ID from resource
   // Resource format: "chats('19:xxx')/messages('1234567890')"

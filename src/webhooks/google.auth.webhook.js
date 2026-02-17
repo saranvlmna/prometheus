@@ -1,15 +1,14 @@
 import { google } from "googleapis";
 import googleConfig from "../../config/google.config.js";
 import User from "../../database/model/user.js";
+import Subscription from "../../database/model/subscription.js";
 
 export default async (req, res) => {
   try {
     const code = req.query.code;
-
     const oAuth2Client = googleConfig();
 
     const { tokens } = await oAuth2Client.getToken(code);
-
     oAuth2Client.setCredentials(tokens);
 
     // Fetch user profile from Google
@@ -17,76 +16,88 @@ export default async (req, res) => {
     const userInfo = await oauth2.userinfo.get();
     const { id, email, name } = userInfo.data;
 
-    console.log("Google User Info:", userInfo.data);
+    console.log("[GoogleAuth] User Info:", userInfo.data);
 
-    // Update or create user in DB
-    let user = await User.findOne({ type: "google", providerId: id });
+    // 1. Manage User (Identity)
+    let user = await User.findOne({ email });
     if (!user) {
-      user = await User.findOne({ email });
-    }
-
-    if (user) {
-      user.type = "google";
-      user.providerId = id;
-      user.accessToken = tokens.access_token;
-      user.refreshToken = tokens.refresh_token || user.refreshToken; // Use existing refresh token if not provided
-      user.expiry = new Date(tokens.expiry_date);
-      await user.save();
+      user = await User.create({ name, email });
+      console.log("[GoogleAuth] Created new user:", email);
     } else {
-      user = await User.create({
-        name,
-        email,
-        type: "google",
-        providerId: id,
-        accessToken: tokens.access_token,
-        refreshToken: tokens.refresh_token,
-        expiry: new Date(tokens.expiry_date),
-      });
+      console.log("[GoogleAuth] Found existing user:", email);
     }
 
-    console.log("User saved/updated:", user.email);
+    // 2. Manage Subscription (Credentials)
+    let sub = await Subscription.findOne({ userId: user._id, provider: "google" });
 
-    const gmail = google.gmail({
-      version: "v1",
-      auth: oAuth2Client,
-    });
+    const subData = {
+      userId: user._id,
+      provider: "google",
+      providerId: id,
+      accessToken: tokens.access_token,
+      refreshToken: tokens.refresh_token || sub?.refreshToken,
+      expiry: tokens.expiry_date ? new Date(tokens.expiry_date) : undefined,
+      lastLogin: new Date(),
+    };
 
-    const response = await gmail.users.watch({
-      userId: "me",
-      requestBody: {
-        topicName: "projects/prometheus-487614/topics/gmail-notifications",
-        labelIds: ["INBOX"],
-      },
-    });
+    if (sub) {
+      Object.assign(sub, subData);
+      await sub.save();
+      console.log("[GoogleAuth] Updated existing subscription for", email);
+    } else {
+      sub = await Subscription.create(subData);
+      console.log("[GoogleAuth] Created new subscription for", email);
+    }
 
-    console.log("Watch activated:", response.data);
+    // 3. Activate Gmail Watch
+    const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
+    let gmailWatch = null;
+    try {
+      const response = await gmail.users.watch({
+        userId: "me",
+        requestBody: {
+          topicName: "projects/prometheus-487614/topics/gmail-notifications",
+          labelIds: ["INBOX"],
+        },
+      });
+      gmailWatch = response.data;
+      console.log("[GoogleAuth] Gmail Watch activated:", gmailWatch);
 
-    // Subscribe to Google Chat events programmatically:
-    // This allows triggering a webhook when a message is received in personal or group chats.
+      sub.subscriptionId = gmailWatch.historyId; // Storing historyId as an initial point
+      await sub.save();
+    } catch (watchError) {
+      console.error("[GoogleAuth] Failed to activate Gmail watch:", watchError.message);
+    }
+
+    // 4. Activate Google Chat Watch
+    let chatWatch = "Not attempted";
     try {
       const workspaceevents = google.workspaceevents({ version: "v1", auth: oAuth2Client });
-      const subscription = await workspaceevents.subscriptions.create({
+      const chatSub = await workspaceevents.subscriptions.create({
         requestBody: {
           targetResource: `//chat.googleapis.com/users/me/spaces`,
           eventTypes: ["google.workspace.chat.message.v1.created"],
           notificationEndpoint: {
-            pubsubTopic: process.env.GOOGLE_CHAT_TOPIC, // e.g., 'projects/hackathon-bot-487506/topics/chat-notifications'
+            pubsubTopic: process.env.GOOGLE_CHAT_TOPIC,
           },
           payloadOptions: { includeResource: true },
         },
       });
-      console.log("Chat subscription created:", subscription.data);
+      chatWatch = chatSub.data;
+      console.log("[GoogleAuth] Chat subscription created:", chatWatch);
     } catch (chatWatchError) {
-      console.warn("Failed to activate Chat watch:", chatWatchError.message);
-      // We don't throw here to avoid failing the entire Gmail auth flow if Chat watch fails
+      console.warn("[GoogleAuth] Failed to activate Chat watch:", chatWatchError.message);
     }
 
     return res.json({
-      gmailWatch: response.data,
-      chatWatch: "Attempted",
+      status: "success",
+      userId: user._id,
+      email: user.email,
+      gmailWatch,
+      chatWatch,
     });
   } catch (error) {
-    console.log(error);
+    console.error("[GoogleAuth] Error:", error);
     return res.status(500).json({ error: error.message });
   }
 };
