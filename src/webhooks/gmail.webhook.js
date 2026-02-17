@@ -10,6 +10,7 @@ import { getNewMessageIds, fetchEmailData } from "./lib/gmail_fetcher.js";
 export default async (req, res) => {
   // Always ACK pub/sub immediately — processing is async
   res.status(200).send("OK");
+  console.log("[Webhook] Received Pub/Sub message");
 
   try {
     const pubsubMessage = req.body?.message;
