@@ -14,8 +14,6 @@ export default async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        // Return the user (which acts as the session token in this simple model if using ID, 
-        // or specifically the accessToken if they have one linked, but for local it's just the user profile)
         res.json({ message: "Login successful", user });
     } catch (error) {
         console.error("Login Error:", error);
