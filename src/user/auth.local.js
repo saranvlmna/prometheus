@@ -1,4 +1,5 @@
 import login from "./lib/login.js";
+import jwt from "jsonwebtoken";
 
 export default async (req, res) => {
     try {
@@ -14,7 +15,14 @@ export default async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        res.json({ message: "Login successful", user });
+        // Generate JWT Token
+        const token = jwt.sign(
+            { id: user._id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "7d" }
+        );
+
+        res.json({ message: "Login successful", user, token });
     } catch (error) {
         console.error("Login Error:", error);
         res.status(500).json({ message: "Internal Server Error" });

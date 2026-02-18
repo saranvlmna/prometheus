@@ -6,6 +6,7 @@ import teamsRouter from "./src/teams/router.js";
 import userRouter from "./src/user/router.js";
 import webhookRouter from "./src/webhooks/router.js";
 import actionsRouter from "./src/actions/router.js";
+import toolsRouter from "./src/tools/router.js";
 import swaggerUi from "swagger-ui-express";
 import swaggerJsdoc from "swagger-jsdoc";
 
@@ -56,5 +57,6 @@ app.use("/teams", teamsRouter);
 app.use("/user", userRouter);
 app.use("/google", googleRouter);
 app.use("/actions", actionsRouter);
+app.use("/tools", toolsRouter);
 
 export default app;

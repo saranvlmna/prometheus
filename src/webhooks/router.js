@@ -68,5 +68,16 @@ webhookRouter.get("/google/auth", googleAuthWebhook);
  */
 webhookRouter.post("/gmail", gmailWebhook);
 
+/**
+ * @swagger
+ * /webhook/slack/callback:
+ *   get:
+ *     summary: Slack auth callback receiver
+ *     tags: [Webhooks]
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+webhookRouter.get("/slack/callback", (await import("./slack.webhook.js")).default);
 
 export default webhookRouter;

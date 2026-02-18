@@ -27,8 +27,19 @@ export default async (req, res) => {
       console.log("[GoogleAuth] Found existing user:", email);
     }
 
-    // 2. Manage Subscription (Credentials)
+    // Manage Subscription (Credentials)
     let sub = await Subscription.findOne({ userId: user._id, provider: "google" });
+
+    // Extract toolId from state
+    let toolId = null;
+    try {
+      if (req.query.state) {
+        const state = JSON.parse(req.query.state);
+        toolId = state.toolId;
+      }
+    } catch (e) {
+      console.error("[GoogleAuth] Failed to parse state:", e.message);
+    }
 
     const subData = {
       userId: user._id,
@@ -47,6 +58,20 @@ export default async (req, res) => {
     } else {
       sub = await Subscription.create(subData);
       console.log("[GoogleAuth] Created new subscription for", email);
+    }
+
+    // 3. Record Tool Connection if toolId is present
+    console.log("[GoogleAuth] Processing tool connection. toolId:", toolId, "userId:", user._id);
+    if (toolId) {
+      const ConnectedTool = (await import("../../database/model/connected-tool.js")).default;
+      const result = await ConnectedTool.findOneAndUpdate(
+        { userId: user._id, toolId },
+        { status: "connected" },
+        { upsert: true, new: true }
+      );
+      console.log("[GoogleAuth] Recorded connection for tool:", toolId, "Result:", result ? "Success" : "Failed");
+    } else {
+      console.warn("[GoogleAuth] No toolId found in state, skipping tool connection record.");
     }
 
     // 3. Activate Gmail Watch
@@ -89,15 +114,37 @@ export default async (req, res) => {
       console.warn("[GoogleAuth] Failed to activate Chat watch:", chatWatchError.message);
     }
 
-    return res.json({
-      status: "success",
-      userId: user._id,
-      email: user.email,
-      gmailWatch,
-      chatWatch,
-    });
+    return res.send(`
+      <html>
+        <body>
+          <script>
+            console.log("Sending AUTH_SUCCESS to opener...");
+            window.opener.postMessage({ 
+              type: 'AUTH_SUCCESS', 
+              toolId: '${toolId}',
+              userId: '${user._id}'
+            }, "*");
+            window.close();
+          </script>
+          <p>Authentication successful! This window will close automatically.</p>
+        </body>
+      </html>
+    `);
   } catch (error) {
     console.error("[GoogleAuth] Error:", error);
-    return res.status(500).json({ error: error.message });
+    return res.send(`
+      <html>
+        <body>
+          <script>
+            console.log("Sending AUTH_ERROR to opener...");
+            window.opener.postMessage({ 
+              type: 'AUTH_ERROR', 
+              error: '${error.message || "Unknown error"}' 
+            }, "*");
+            window.close();
+          </script>
+        </body>
+      </html>
+    `);
   }
 };
