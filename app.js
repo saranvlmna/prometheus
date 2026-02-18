@@ -13,6 +13,10 @@ dotenv.config();
 
 const app = express();
 
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 const swaggerOptions = {
     definition: {
         openapi: "3.0.0",
@@ -32,11 +36,16 @@ const swaggerOptions = {
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const swaggerUiOptions = {
+    customCssUrl: "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.3/swagger-ui.min.css",
+    customJs: [
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.3/swagger-ui-bundle.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.10.3/swagger-ui-standalone-preset.js"
+    ]
+};
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec, swaggerUiOptions));
 
 app.get("/", (req, res) => {
     res.send("Prometheus Health Is Ok and v00.1");
