@@ -37,12 +37,12 @@ export default async (req, res) => {
     // 2. Load provider credentials (Subscription)
     const sub = await Subscription.findOne({ userId: user._id, provider: "google" });
     if (!sub?.refreshToken) {
-      console.error(`[Webhook] ❌ No active Google subscription or refresh token found for user ID: ${user._id}`);
+      console.error(`for user ID: ${user._id}`);
       return;
     }
     console.warn(`[Webhook] Subscription verified. Last historyId processed: ${sub.lastHistoryId}`);
 
-    // 3. Build OAuth client
+    // 3. Build OAuth client[Webhook] ❌ No active Google subscription or refresh token found 
     const oAuth2Client = googleConfig();
     oAuth2Client.setCredentials({
       access_token: sub.accessToken,
@@ -124,10 +124,19 @@ export default async (req, res) => {
         console.warn(`[Webhook] ${batchLabel} Starting Phase 2: Action Orchestration...`);
         const report = await orchestrateActions(
           analysis,
-          emailData,
+          {
+            id: messageId,
+            threadId: emailData.threadId,
+            subject: emailData.subject,
+            from: emailData.from,
+            context: {
+              threadId: emailData.threadId,
+            },
+            ...emailData, // Include full emailData just in case, though it's redundant now
+          },
           user,
           oAuth2Client,
-          { autoExecute }
+          { autoExecute, source: "gmail" }
         );
 
         console.warn(`[Webhook] ${batchLabel} ✅ Processing complete for ${messageId}. Report:`, JSON.stringify(report, null, 2));

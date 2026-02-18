@@ -4,13 +4,13 @@ import Action from "../../../../database/model/action.model.js";
 
 export const orchestrateActions = async (
     analysis,
-    emailData,
+    sourceData,
     user,
     oAuth2Client,
-    options = { autoExecute: false }
+    options = { autoExecute: false, source: "gmail" }
 ) => {
     const report = {
-        emailId: emailData.id,
+        sourceId: sourceData.id,
         importance: analysis.importance,
         audience: analysis.audience,
         summary: analysis.summary,
@@ -19,19 +19,21 @@ export const orchestrateActions = async (
         failed: [],
     };
 
-    if (analysis.importance === "ignore" || analysis.actions.length === 0) {
-        console.log(`[Orchestrator] Skipping email ${emailData.id} — importance: ${analysis.importance}`);
+    if (analysis.importance === "ignore" || (analysis.actions && analysis.actions.length === 0)) {
+        console.log(`[Orchestrator] Skipping ${options.source} ${sourceData.id} — importance: ${analysis.importance}`);
         return report;
     }
 
     const context = {
         oAuth2Client,
-        emailData,
+        sourceData,
         user,
         jiraProjectKey: user.jiraProjectKey || process.env.JIRA_PROJECT_KEY,
     };
 
-    const actionTasks = analysis.actions.map(async (action) => {
+    const actions = Array.isArray(analysis.actions) ? analysis.actions : [];
+
+    const actionTasks = actions.map(async (action) => {
         const plugin = pluginRegistry.get(action.type);
 
         if (!plugin) {
@@ -54,12 +56,12 @@ export const orchestrateActions = async (
         // Create unified Action document
         const savedAction = await Action.create({
             userId: user._id,
-            source: "gmail",
-            sourceId: emailData.id,
+            source: options.source,
+            sourceId: sourceData.id,
             context: {
-                threadId: emailData.threadId,
-                subject: emailData.subject,
-                from: emailData.from,
+                ...sourceData.context,
+                subject: sourceData.subject,
+                from: sourceData.from,
             },
             type: action.type,
             status,
@@ -82,7 +84,7 @@ export const orchestrateActions = async (
         }
 
         try {
-            console.log(`[Orchestrator] Executing: ${action.type} for email ${emailData.id}`);
+            console.log(`[Orchestrator] Executing: ${action.type} for ${options.source} ${sourceData.id}`);
             const result = await plugin.execute(action, context);
 
             const finalStatus = result.success ? "completed" : "failed";
@@ -120,7 +122,7 @@ export const orchestrateActions = async (
     await Promise.allSettled(actionTasks);
 
     console.log(
-        `[Orchestrator] Done for ${emailData.id} — ` +
+        `[Orchestrator] Done for ${options.source} ${sourceData.id} — ` +
         `executed: ${report.executed.length}, skipped: ${report.skipped.length}, failed: ${report.failed.length}`
     );
 

@@ -4,6 +4,8 @@ import googleAuthWebhook from "./google.auth.webhook.js";
 import outLookWebhook from "./outlook.webhook.js";
 import teamsChannelsWebhook from "./teams-channels.webhook.js";
 import teamsWebhook from "./teams.webhook.js";
+import slackWebhook from "./slack.webhook.js";
+import slackEventsWebhook from "./slack.events.webhook.js";
 
 
 const webhookRouter = Router();
@@ -78,6 +80,18 @@ webhookRouter.post("/gmail", gmailWebhook);
  *       200:
  *         description: Success
  */
-webhookRouter.get("/slack/callback", (await import("./slack.webhook.js")).default);
+webhookRouter.get("/slack/callback", slackWebhook);
+
+/**
+ * @swagger
+ * /webhook/slack/events:
+ *   post:
+ *     summary: Slack Events API receiver
+ *     tags: [Webhooks]
+ *     responses:
+ *       200:
+ *         description: Success
+ */
+webhookRouter.post("/slack/events", slackEventsWebhook);
 
 export default webhookRouter;
