@@ -3,7 +3,7 @@ name: Deploy to Dev Server
 on:
   push:
     branches:
-      - main
+      - dev_deploy
 
 jobs:
   deploy:
@@ -23,8 +23,8 @@ jobs:
             cd /root/prometheus
 
             git fetch origin
-            git checkout main
-            git pull origin main
+            git checkout dev_deploy
+            git pull origin dev_deploy
 
             docker compose down
             docker compose build
