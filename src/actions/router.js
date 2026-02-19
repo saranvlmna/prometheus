@@ -4,7 +4,6 @@ import actionGet from "./get.js";
 import actionsList from "./list.js";
 import actionUpdatePayload from "./update.payload.js";
 import actionUpdateStatus from "./update.status.js";
-import authentication from "../../shared/middlewares/authentication.js";
 
 const actionsRouter = Router();
 
