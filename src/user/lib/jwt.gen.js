@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 
-const JWT_SECRET = process.env.JWT_SECRET || "mysecret";
+const JWT_SECRET = "mysecret";
 
 export default (data) => {
   try {
