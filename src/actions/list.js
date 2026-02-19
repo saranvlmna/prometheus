@@ -3,7 +3,9 @@ import actionFindAll from "./lib/action.find.all.js";
 export default async (req, res) => {
   try {
     const { status, type } = req.query;
-    const filter = {};
+    const { user_id: userId } = req.user;
+
+    const filter = { userId };
 
     if (status) filter.status = status;
     if (type) filter.type = type;
