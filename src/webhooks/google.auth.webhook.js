@@ -73,20 +73,17 @@ export default async (req, res) => {
       }
     }
 
-    return res.send(`
-<!DOCTYPE html>
+    res.send(`
 <html>
-  <body>
-    <script>
-      window.opener.postMessage(
-        { type: "AUTH_SUCCESS" },
-        "https://your-frontend-domain.com"
-      );
-      window.close();
-    </script>
-  </body>
+<body>
+<script>
+          window.opener.postMessage({ type: 'AUTH_SUCCESS' }, window.location.origin);
+          window.close();
+</script>
+<p>Authentication successful! Closing window...</p>
+</body>
 </html>
-`);
+  `);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: error.message });
