@@ -1,59 +1,85 @@
 import mongoose from "mongoose";
 
-const messageSchema = new mongoose.Schema({
+const messageSchema = new mongoose.Schema(
+  {
     userId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: true,
-        index: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
     },
     platform: {
-        type: String,
-        enum: ["teams", "teams-channel", "outlook"],
-        required: true,
+      type: String,
+      enum: ["teams", "teams-channel", "outlook"],
+      required: true,
     },
-    // Teams specific
-    chatId: String,
-    teamId: String,
-    channelId: String,
-
-    // Common fields
     messageId: {
-        type: String,
-        required: true,
-        index: true,
-        unique: true, // Ensure uniqueness
+      type: String,
+      required: true,
+      index: true,
+      unique: true,
     },
-    subject: String, // For emails
-    from: String,
-    fromEmail: String,
-    to: [String], // For emails
-    cc: [String], // For emails
-    content: String,
-    contentType: String,
-    bodyPreview: String,
-
-    // Metadata
-    createdDateTime: Date,
-    receivedDateTime: Date,
-    hasAttachments: Boolean,
-    importance: String,
-    chatType: String, // "chat" or "channel" for Teams
-
-    // Store full raw message
-    raw: mongoose.Schema.Types.Mixed,
-
-    // Processing status
     processed: {
-        type: Boolean,
-        default: false,
+      type: Boolean,
+      default: false,
     },
-    processedAt: Date,
-}, {
+    chatId: {
+      type: String,
+    },
+    teamId: {
+      type: String,
+    },
+    channelId: {
+      type: String,
+    },
+    processedAt: {
+      type: Date,
+    },
+    subject: {
+      type: String,
+    },
+    from: {
+      type: String,
+    },
+    fromEmail: {
+      type: String,
+    },
+    to: {
+      type: [String],
+    },
+    cc: {
+      type: [String],
+    },
+    content: {
+      type: String,
+    },
+    contentType: {
+      type: String,
+    },
+    bodyPreview: {
+      type: String,
+    },
+    receivedDateTime: {
+      type: Date,
+    },
+    hasAttachments: {
+      type: Boolean,
+    },
+    importance: {
+      type: String,
+    },
+    chatType: {
+      type: String,
+    },
+    raw: {
+      type: mongoose.Schema.Types.Mixed,
+    },
+  },
+  {
     timestamps: true,
-});
+  },
+);
 
-// Compound index for efficient queries
 messageSchema.index({ userId: 1, platform: 1, createdDateTime: -1 });
 
 export default mongoose.model("Message", messageSchema);

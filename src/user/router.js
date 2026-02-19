@@ -1,17 +1,10 @@
 import { Router } from "express";
-import azureLogin from "./auth.azure.js";
-import azureCallback from "./callback.js";
-import localLogin from "./auth.local.js";
-import localSignup from "./signup.js";
+import authentication from "../../shared/middlewares/authentication.js";
+import profile from "./profile.js";
+import login from "./signin.js";
 
 const userRouter = Router();
 
-// Azure AD Auth
-userRouter.get("/auth/url", azureLogin);
-userRouter.get("/auth/callback", azureCallback);
-
-// Local Auth
-userRouter.post("/login", localLogin);
-userRouter.post("/signup", localSignup);
-
-export default userRouter; 
+userRouter.post("/signin", login);
+userRouter.get("/profile", authentication, profile);
+export default userRouter;

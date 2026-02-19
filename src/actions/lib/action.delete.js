@@ -1,6 +1,10 @@
-import Action from "../../../database/model/action.model.js";
+import Action from "../../../database/model/action.js";
 
-
-export const deleteAction = async (id) => {
+export default async (id) => {
+  try {
     return await Action.findByIdAndDelete(id);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 };

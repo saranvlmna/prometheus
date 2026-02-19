@@ -1,152 +1,133 @@
 import { google } from "googleapis";
-import googleConfig from "../../config/google.config.js";
-import User from "../../database/model/user.js";
-import Subscription from "../../database/model/subscription.js";
-import ProcessedEmail from "../../database/model/processed_email.model.js";
-import { runGmailAnalysis } from "../agents/gmail_analysis.js";
-import { orchestrateActions } from "../agents/lib/executor/action.orchestrator.js";
-import { getNewMessageIds, fetchEmailData } from "./lib/gmail_fetcher.js";
+import googleConfig from "../../config/google.js";
+import ProcessedEmail from "../../database/model/email.processed.js";
+import { SUBSCRIPTION } from "../../shared/constants/system.js";
+import { runGmailAnalysis } from "../agents/gmail.analysis.js";
+import actionOrchestrator from "../agents/lib/executor/action.orchestrator.js";
+import gmailDataFetch from "../google/gmail/data.fetch.js";
+import getNewMessageIds from "../google/gmail/message.ids.get.js";
+import subscriptionFind from "../subscription/lib/subscription.find.js";
+import subscriptionUpdate from "../subscription/lib/subscription.update.js";
+import userFindByEmail from "../user/lib/user.find.by.email.js";
 
 export default async (req, res) => {
-  // Always ACK pub/sub immediately — processing is async
-  // res.status(200).send("OK");
-  console.warn("[Webhook] Received Pub/Sub message");
-
+  console.log("[Webhook] Received Pub/Sub message");
+  res.status(200).send("OK");
+  
   try {
     const pubsubMessage = req.body?.message;
+
     if (!pubsubMessage?.data) {
-      console.warn("[Webhook] Received empty or invalid Pub/Sub message");
+      console.log("[Webhook] Received empty or invalid Pub/Sub message");
       return;
     }
 
-    const decoded = JSON.parse(
-      Buffer.from(pubsubMessage.data, "base64").toString("utf-8")
-    );
+    const decoded = JSON.parse(Buffer.from(pubsubMessage.data, "base64").toString("utf-8"));
     const { emailAddress, historyId: incomingHistoryId } = decoded;
 
-    console.warn(`[Webhook] 📬 Processing Gmail update for ${emailAddress}, historyId: ${incomingHistoryId}`);
+    console.log(`[Webhook] Processing Gmail update for ${emailAddress}, historyId: ${incomingHistoryId}`);
 
-    // 1. Load user identity
-    const user = await User.findOne({ email: emailAddress });
+    const user = await userFindByEmail(emailAddress);
     if (!user) {
-      console.error(`[Webhook] ❌ No user found in database for email: ${emailAddress}`);
+      console.error(`[Webhook] No user found in database for email: ${emailAddress}`);
       return;
     }
-    console.warn(`[Webhook] Found user: ${user.name || user.email} (${user._id})`);
+    console.log(`[Webhook] Found user: ${user.name || user.email} (${user._id})`);
 
-    // 2. Load provider credentials (Subscription)
-    const sub = await Subscription.findOne({ userId: user._id, provider: "google" });
-    if (!sub?.refreshToken) {
-      console.error(`for user ID: ${user._id}`);
+    const subscription = await subscriptionFind(user._id, SUBSCRIPTION.GOOGLE);
+
+    if (!subscription?.refreshToken) {
+      console.log(`[Webhook] No active Google subscription or refresh token found for user ID: ${user._id}`);
       return;
     }
-    console.warn(`[Webhook] Subscription verified. Last historyId processed: ${sub.lastHistoryId}`);
+    console.log(`[Webhook] Subscription verified. Last historyId processed: ${subscription.lastHistoryId}`);
 
-    // 3. Build OAuth client[Webhook] ❌ No active Google subscription or refresh token found 
     const oAuth2Client = googleConfig();
     oAuth2Client.setCredentials({
-      access_token: sub.accessToken,
-      refresh_token: sub.refreshToken,
+      access_token: subscription.accessToken,
+      refresh_token: subscription.refreshToken,
     });
 
-    // Auto-refresh token if needed
     oAuth2Client.on("tokens", async (tokens) => {
       if (tokens.access_token) {
-        console.warn(`[Webhook] 🔑 Access token expired. Rotating for user: ${emailAddress}`);
-        await Subscription.findByIdAndUpdate(sub._id, { accessToken: tokens.access_token });
-        console.warn(`[Webhook] Rotated access token stored successfully.`);
+        console.log(`[Webhook] Access token expired. Rotating for user: ${emailAddress}`);
+        await subscriptionUpdate(subscription._id, { accessToken: tokens.access_token });
+        console.log(`[Webhook] Rotated access token stored successfully.`);
       }
     });
 
     const gmail = google.gmail({ version: "v1", auth: oAuth2Client });
 
-    // 4. Fetch only NEW message IDs since last processed historyId
-    const startHistoryId = sub.lastHistoryId || incomingHistoryId;
-    console.warn(`[Webhook] Fetching new message IDs since startHistoryId: ${startHistoryId}`);
+    const startHistoryId = subscription.lastHistoryId || incomingHistoryId;
+    console.log(`[Webhook] Fetching new message IDs since startHistoryId: ${startHistoryId}`);
 
     const { messageIds, newHistoryId } = await getNewMessageIds(gmail, startHistoryId);
 
     if (messageIds.length === 0) {
-      console.warn(`[Webhook] ℹ️ No new messages found to process for ${emailAddress}`);
-      // Even if no messages, we might want to update historyId if it's newer
-      if (newHistoryId && newHistoryId !== sub.lastHistoryId) {
-        await Subscription.findByIdAndUpdate(sub._id, { lastHistoryId: newHistoryId });
-        console.warn(`[Webhook] Updated historyId to ${newHistoryId} even with no new messages.`);
+      console.log(`[Webhook] No new messages found to process for ${emailAddress}`);
+      if (newHistoryId && newHistoryId !== subscription.lastHistoryId) {
+        await subscriptionUpdate(subscription._id, { lastHistoryId: newHistoryId });
+        console.log(`[Webhook] Updated historyId to ${newHistoryId} even with no new messages.`);
       }
       return;
     }
 
-    console.warn(`[Webhook] Found ${messageIds.length} new message(s) to process. Total batch size: ${messageIds.length}`);
+    console.log(
+      `[Webhook] Found ${messageIds.length} new message(s) to process. Total batch size: ${messageIds.length}`,
+    );
 
-    // Persist new historyId immediately so next webhook has correct starting point
     if (newHistoryId) {
-      console.warn(`[Webhook] Updating subscription lastHistoryId to: ${newHistoryId}`);
-      await Subscription.findByIdAndUpdate(sub._id, { lastHistoryId: newHistoryId });
+      console.log(`[Webhook] Updating subscription lastHistoryId to: ${newHistoryId}`);
+      await subscriptionUpdate(subscription._id, { lastHistoryId: newHistoryId });
     }
 
-    // 5. Process each message
     const autoExecute = user.preferences?.autoExecuteActions ?? false;
-    console.warn(`[Webhook] Starting message processing loop. Auto-execute: ${autoExecute}`);
+    console.log(`[Webhook] Starting message processing loop. Auto-execute: ${autoExecute}`);
 
     for (const [index, messageId] of messageIds.entries()) {
       const batchLabel = `[${index + 1}/${messageIds.length}]`;
-      console.warn(`[Webhook] ${batchLabel} Processing message ID: ${messageId}`);
+      console.log(`[Webhook] ${batchLabel} Processing message ID: ${messageId}`);
 
       try {
-        // Deduplication check
         const alreadyProcessed = await ProcessedEmail.findOne({
           userId: user._id,
           messageId,
         });
         if (alreadyProcessed) {
-          console.warn(`[Webhook] ${batchLabel} Skipping already-processed message: ${messageId}`);
+          console.log(`[Webhook] ${batchLabel} Skipping already-processed message: ${messageId}`);
           continue;
         }
 
-        // Mark as processed immediately (before analysis) to prevent race conditions
-        console.warn(`[Webhook] ${batchLabel} Marking message ${messageId} as processed in DB...`);
+        console.log(`[Webhook] ${batchLabel} Marking message ${messageId} as processed in DB...`);
         await ProcessedEmail.create({ userId: user._id, messageId });
 
-        // Fetch full email
-        console.warn(`[Webhook] ${batchLabel} Triggering email data fetch...`);
-        const emailData = await fetchEmailData(gmail, messageId);
-        console.warn(`[Webhook] ${batchLabel} Analyzing email: "${emailData.subject}" from ${emailData.from}`);
+        console.log(`[Webhook] ${batchLabel} Triggering email data fetch...`);
+        const emailData = await gmailDataFetch(gmail, messageId);
+        console.log(`[Webhook] ${batchLabel} Analyzing email: "${emailData.subject}" from ${emailData.from}`);
 
-        // Phase 1: AI Analysis
-        console.warn(`[Webhook] ${batchLabel} Starting Phase 1: AI Analysis...`);
+        console.log(`[Webhook] ${batchLabel} Starting Phase 1: AI Analysis...`);
         const analysis = await runGmailAnalysis(emailData);
-        console.warn(
+        console.log(
           `[Webhook] ${batchLabel} Analysis Result → Importance: ${analysis.importance}, ` +
-          `Actions: [${analysis.actions.map((a) => a.type).join(", ")}]`
+            `Actions: [${analysis.actions.map((a) => a.type).join(", ")}]`,
         );
 
-        // Phase 2: Orchestrate actions
-        console.warn(`[Webhook] ${batchLabel} Starting Phase 2: Action Orchestration...`);
-        const report = await orchestrateActions(
-          analysis,
-          {
-            id: messageId,
-            threadId: emailData.threadId,
-            subject: emailData.subject,
-            from: emailData.from,
-            context: {
-              threadId: emailData.threadId,
-            },
-            ...emailData, // Include full emailData just in case, though it's redundant now
-          },
-          user,
-          oAuth2Client,
-          { autoExecute, source: "gmail" }
-        );
+        console.log(`[Webhook] ${batchLabel} Starting Phase 2: Action Orchestration...`);
+        const report = await actionOrchestrator(analysis, emailData, user, oAuth2Client, { autoExecute });
 
-        console.warn(`[Webhook] ${batchLabel} ✅ Processing complete for ${messageId}. Report:`, JSON.stringify(report, null, 2));
+        console.log(
+          `[Webhook] ${batchLabel} Processing complete for ${messageId}. Report:`,
+          JSON.stringify(report, null, 2),
+        );
       } catch (msgError) {
-        // Don't let one message failure kill the entire batch
-        console.error(`[Webhook] ${batchLabel} ❌ Failed to process message ${messageId}:`, msgError.stack || msgError.message);
+        console.error(
+          `[Webhook] ${batchLabel} Failed to process message ${messageId}:`,
+          msgError.stack || msgError.message,
+        );
       }
     }
-    console.warn(`[Webhook] 🏁 Finished processing all ${messageIds.length} messages for ${emailAddress}`);
+    console.log(`[Webhook] Finished processing all ${messageIds.length} messages for ${emailAddress}`);
   } catch (error) {
-    console.error("[Webhook] 🚨 FATAL WEBHOOK ERROR:", error.stack || error);
+    console.error("[Webhook] FATAL WEBHOOK ERROR:", error.stack || error);
   }
 };

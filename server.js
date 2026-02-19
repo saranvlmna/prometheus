@@ -1,9 +1,9 @@
 import app from "./app.js";
-import connectDB from "./database/connection.js";
+import connectDB from "./config/database.js";
+const APP_PORT = process.env.APP_PORT || 4000;
 
-// Connect to database and start server for local development
 await connectDB();
 
-app.listen(4000, "0.0.0.0", () => {
-  console.log("Prometheus server is running on port 4000");
+app.listen(APP_PORT, "0.0.0.0", () => {
+  console.log(`Prometheus server is running on port ${APP_PORT}`);
 });

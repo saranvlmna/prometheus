@@ -1,6 +1,10 @@
-import Action from "../../../database/model/action.model.js";
+import Action from "../../../database/model/action.js";
 
-
-export const createAction = async (data) => {
+export default async (data) => {
+  try {
     return await Action.create(data);
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 };

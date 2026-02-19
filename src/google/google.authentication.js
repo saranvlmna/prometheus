@@ -1,4 +1,4 @@
-import googleConfig from "../../config/google.config.js";
+import googleConfig from "../../config/google.js";
 
 const SCOPES_MAP = {
   gmail: [
@@ -21,7 +21,7 @@ const SCOPES_MAP = {
     "https://www.googleapis.com/auth/userinfo.email",
   ],
   "google-meet": [
-    "https://www.googleapis.com/auth/calendar.events", // Meet often uses calendar scopes or specific ones if available
+    "https://www.googleapis.com/auth/calendar.events",
     "openid",
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/userinfo.email",
@@ -50,12 +50,12 @@ export default async (req, res) => {
     console.log("[GoogleAuth] Client ID:", oAuth2Client._clientId);
 
     const scopes = SCOPES_MAP[toolId] || DEFAULT_SCOPES;
-
+    console.log("[GoogleAuth] Using scopes:", scopes);
     const authUrl = oAuth2Client.generateAuthUrl({
       access_type: "offline",
       scope: scopes,
       prompt: "consent",
-      state: JSON.stringify({ toolId }), // Passing toolId via state to retrieve it in webhook
+      state: JSON.stringify({ toolId }),
     });
 
     return res.json({ authUrl });

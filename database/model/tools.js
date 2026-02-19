@@ -1,25 +1,24 @@
 import mongoose from "mongoose";
 
-const tools = new mongoose.Schema(
+const ToolSchema = new mongoose.Schema(
   {
-    name: {
-      type: String,
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
-      trim: true,
     },
-
-    email: {
+    toolId: {
       type: String,
       required: true,
-      unique: true,
-      lowercase: true,
     },
-
-    password: {
+    status: {
       type: String,
-      required: true,
-      minlength: 6,
-      select: false,
+      enum: ["connected", "disconnected", "pending"],
+      default: "connected",
+    },
+    config: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
   },
   {
@@ -27,6 +26,8 @@ const tools = new mongoose.Schema(
   },
 );
 
-const User = mongoose.model("User", tools);
+ToolSchema.index({ userId: 1, toolId: 1 }, { unique: true });
 
-export default User;
+const Tool = mongoose.model("Tool", ToolSchema);
+
+export default Tool;

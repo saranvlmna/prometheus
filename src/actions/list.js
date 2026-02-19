@@ -1,17 +1,18 @@
-import { findAllActions } from "./lib/action.db.js";
+import actionFindAll from "./lib/action.find.all.js";
 
 export default async (req, res) => {
-    try {
-        const { status, type } = req.query;
-        const filter = {};
-        if (status) filter.status = status;
-        if (type) filter.type = type;
+  try {
+    const { status, type } = req.query;
+    const filter = {};
 
-        const actions = await findAllActions(filter);
+    if (status) filter.status = status;
+    if (type) filter.type = type;
 
-        return res.json(actions);
-    } catch (error) {
-        console.error("[ActionsList] Error fetching actions:", error);
-        return res.status(500).json({ error: error.message });
-    }
+    const actions = await actionFindAll(filter);
+
+    return res.json(actions);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: error.message });
+  }
 };

@@ -1,0 +1,86 @@
+{
+  "tags": [
+    {
+      "name": "subscription",
+      "description": "Subscription management for Google and Slack integrations"
+    }
+  ],
+  "paths": {
+    "/subscription/google": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Authenticate with Google",
+        "description": "Initiates Google OAuth2 authentication flow for subscription",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Google authentication initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "authUrl": {
+                      "type": "string",
+                      "description": "Google OAuth2 authentication URL"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Invalid or missing token" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/subscription/slack": {
+      "get": {
+        "tags": ["subscription"],
+        "summary": "Authenticate with Slack",
+        "description": "Initiates Slack OAuth authentication flow for subscription",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Slack authentication initiated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "authUrl": {
+                      "type": "string",
+                      "description": "Slack OAuth authentication URL"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Invalid or missing token" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Subscription": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "description": "Subscription unique identifier" },
+          "userId": { "type": "string", "description": "Associated user ID" },
+          "type": {
+            "type": "string",
+            "enum": ["google", "slack"],
+            "description": "Subscription integration type"
+          },
+          "accessToken": { "type": "string", "description": "OAuth access token" },
+          "refreshToken": { "type": "string", "description": "OAuth refresh token" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

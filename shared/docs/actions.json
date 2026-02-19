@@ -1,0 +1,164 @@
+{
+  "tags": [{ "name": "actions", "description": "Actions management endpoints" }],
+  "paths": {
+    "/actions": {
+      "get": {
+        "tags": ["actions"],
+        "summary": "List all actions",
+        "description": "Retrieve a list of all actions with their details",
+        "responses": {
+          "200": {
+            "description": "Successful retrieval of actions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Action"
+                  }
+                }
+              }
+            }
+          },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/actions/{id}": {
+      "get": {
+        "tags": ["actions"],
+        "summary": "Get action by ID",
+        "description": "Retrieve a specific action by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Action ID",
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Action found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Action" }
+              }
+            }
+          },
+          "404": { "description": "Action not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/actions/{id}/status": {
+      "post": {
+        "tags": ["actions"],
+        "summary": "Update action status",
+        "description": "Update the status of a specific action",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Action ID",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "description": "New status for the action",
+                    "enum": ["pending", "in-progress", "completed", "failed"]
+                  }
+                },
+                "required": ["status"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Status updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Action" }
+              }
+            }
+          },
+          "400": { "description": "Invalid request" },
+          "404": { "description": "Action not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    },
+    "/actions/{id}/payload": {
+      "post": {
+        "tags": ["actions"],
+        "summary": "Update action payload",
+        "description": "Update the payload/data of a specific action",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Action ID",
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "description": "Action payload data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Payload updated successfully",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Action" }
+              }
+            }
+          },
+          "400": { "description": "Invalid request" },
+          "404": { "description": "Action not found" },
+          "500": { "description": "Internal server error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Action": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string", "description": "Action unique identifier" },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "in-progress", "completed", "failed"],
+            "description": "Current status of the action"
+          },
+          "payload": {
+            "type": "object",
+            "description": "Action payload/data"
+          },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}
