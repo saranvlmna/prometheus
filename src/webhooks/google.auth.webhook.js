@@ -77,7 +77,7 @@ export default async (req, res) => {
 <html>
 <body>
 <script>
-          window.opener.postMessage({ type: 'AUTH_SUCCESS' }, window.location.origin);
+          window.opener.postMessage({ type: 'AUTH_SUCCESS' }, http://localhost:5173/home);
           window.close();
 </script>
 <p>Authentication successful! Closing window...</p>
