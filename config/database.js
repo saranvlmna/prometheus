@@ -6,8 +6,9 @@ const connectDB = async () => {
       console.log("MongoDB already connected");
       return;
     }
-
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+    const DB_URL =
+      "mongodb+srv://tomgeorgethoughtminds_db_user:SjKZuZDPEYpmTkHM@cluster0.tg13fml.mongodb.net/prometheus_dev?appName=Cluster0";
+    const conn = await mongoose.connect(DB_URL);
 
     console.log(`MongoDB Connected: ${conn.connection.host}`);
     console.log("Database connected successfully");
