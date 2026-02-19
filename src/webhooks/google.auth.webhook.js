@@ -73,12 +73,20 @@ export default async (req, res) => {
       }
     }
 
-    return res.json({
-      status: "success",
-      userId: user._id,
-      email: user.email,
-      gmailWatch,
-    });
+    return res.send(`
+<!DOCTYPE html>
+<html>
+  <body>
+    <script>
+      window.opener.postMessage(
+        { type: "AUTH_SUCCESS" },
+        "https://your-frontend-domain.com"
+      );
+      window.close();
+    </script>
+  </body>
+</html>
+`);
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: error.message });

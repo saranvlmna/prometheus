@@ -7,14 +7,16 @@ export default async (req, res) => {
     const avalidTools = AVAILABLE_TOOLS;
     const connectedTools = await toolsFind(user_id);
     if (connectedTools.length === 0) return res.json({ tools: avalidTools });
-    
+
+    const result = [];
     avalidTools.forEach((tool) => {
       const isConnected = connectedTools.some((connectedTool) => connectedTool.toolId === tool.id);
       if (isConnected) {
         tool.status = "connected";
       }
+      result.push(tool);
     });
-    return res.json({ tools: avalidTools });
+    return res.json({ tools: result });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error" });
