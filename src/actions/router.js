@@ -3,12 +3,13 @@ import actionGet from "./get.js";
 import actionsList from "./list.js";
 import actionUpdatePayload from "./update.payload.js";
 import actionUpdateStatus from "./update.status.js";
+import authentication from "../../shared/middlewares/authentication.js";
 
 const actionsRouter = Router();
 
-actionsRouter.get("/", actionsList);
-actionsRouter.get("/:id", actionGet);
-actionsRouter.post("/:id/status", actionUpdateStatus);
-actionsRouter.post("/:id/payload", actionUpdatePayload);
+actionsRouter.get("/", authentication, actionsList);
+actionsRouter.get("/:id", authentication, actionGet);
+actionsRouter.post("/:id/status", authentication, actionUpdateStatus);
+actionsRouter.post("/:id/payload", authentication, actionUpdatePayload);
 
 export default actionsRouter;
