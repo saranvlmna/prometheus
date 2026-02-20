@@ -43,7 +43,11 @@ const DEFAULT_SCOPES = [
 
 export default async (req, res) => {
   try {
+    const notImplemented = ["google-chat", "google - meet"];
     const { toolId } = req.query;
+
+    if (notImplemented.includes(toolId)) return;
+
     const oAuth2Client = googleConfig();
 
     console.log("[GoogleAuth] Generating URL. Redirect URI:", oAuth2Client._redirectUri);
