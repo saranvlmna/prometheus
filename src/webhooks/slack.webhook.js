@@ -16,6 +16,7 @@ export default async (req, res) => {
       return res.status(200).send(challenge);
     }
 
+    res.sendStatus(200);
     if (event?.type === "message" && !event.bot_id) {
       const botToken = process.env.SLACK_BOT_TOKEN;
 
