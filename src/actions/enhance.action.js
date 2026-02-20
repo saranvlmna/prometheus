@@ -6,7 +6,7 @@ import userFindById from "../user/lib/user.find.by.id.js";
 export default async (req, res) => {
     try {
         const { actionId } = req.params;
-        const { needAiEnhance, description, payload } = req.body;
+        const { description } = req.body;
         const { user_id: userId } = req.user;
 
         const action = await actionFindById(actionId);
@@ -17,24 +17,18 @@ export default async (req, res) => {
             return res.status(403).json({ error: "Unauthorized access to this action" });
         }
 
-        let finalPayload = payload;
-
-        if (needAiEnhance) {
-            if (!description) {
-                return res.status(400).json({ error: "Description is required for AI enhancement" });
-            }
-
-            const user = await userFindById(userId);
-            const persona = user?.persona;
-
-            finalPayload = await actionEnhance(action, description, persona);
+        if (!description) {
+            return res.status(400).json({ error: "Description is required for enhancement" });
         }
 
-        const updatedAction = await actionUpdate(actionId, { payload: finalPayload });
+        const user = await userFindById(userId);
+        const persona = user?.persona;
+
+        const enhancement = await actionEnhance(action, description, persona);
 
         return res.json({
-            message: needAiEnhance ? "Action enhanced and updated" : "Action updated",
-            action: updatedAction,
+            message: "Action enhanced successfully",
+            enhancement,
         });
     } catch (error) {
         console.error("Enhance Action Error:", error);
