@@ -7,3 +7,4 @@ await connectDB();
 app.listen(APP_PORT, "0.0.0.0", () => {
   console.log(`Prometheus server is running on port ${APP_PORT}`);
 });
+ 
