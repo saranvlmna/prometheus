@@ -12,6 +12,10 @@ export default async (req, res) => {
   try {
     const event = req.body.event;
 
+    if (type === "url_verification") {
+      return res.status(200).send(challenge);
+    }
+
     if (event?.type === "message" && !event.bot_id) {
       const botToken = process.env.SLACK_BOT_TOKEN;
 
