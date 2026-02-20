@@ -10,7 +10,7 @@ import userFindById from "../user/lib/user.find.by.id.js";
 
 export default async (req, res) => {
   try {
-    const event = req.body.event;
+    const { type, challenge, event } = req.body;
 
     if (type === "url_verification") {
       return res.status(200).send(challenge);
