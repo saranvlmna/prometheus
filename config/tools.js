@@ -7,7 +7,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Google_Gmail.svg",
     services: ["google", "email"],
     status: "available",
-    categorys: "communication",
+    categories: "communication",
   },
   {
     id: "google-meet",
@@ -17,7 +17,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Google_Meet.svg",
     services: ["google", "meetings", "video"],
     status: "available",
-    categorys: "action",
+    categories: "actions",
   },
   {
     id: "google-tasks",
@@ -27,7 +27,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Google_Tasks.svg",
     services: ["google", "tasks", "reminders"],
     status: "available",
-    categorys: "action",
+    categories: "actions",
   },
   {
     id: "google-chat",
@@ -37,7 +37,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Google_Chat.svg",
     services: ["google", "chat", "messaging"],
     status: "available",
-    categorys: "communication",
+    categories: "communication",
   },
   {
     id: "google-calendar",
@@ -47,7 +47,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Google_Calendar.svg",
     services: ["google", "calendar", "events"],
     status: "available",
-    categorys: "action",
+    categories: "actions",
   },
   {
     id: "slack",
@@ -57,7 +57,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Slack.svg",
     services: ["slack", "chat", "messaging"],
     status: "available",
-    categorys: "communication",
+    categories: "communication",
   },
   {
     id: "jira",
@@ -67,7 +67,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Jira.svg",
     services: ["jira", "issues", "projects", "tasks"],
     status: "available",
-    categorys: "action",
+    categories: "actions",
   },
   {
     id: "microsoft-teams",
@@ -77,7 +77,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Microsoft_Office_Teams.svg",
     services: ["microsoft", "chat", "meetings", "notifications"],
     status: "coming_soon",
-    categorys: "communication",
+    categories: "communication",
   },
   {
     id: "outlook",
@@ -87,7 +87,7 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Microsoft_Office_Outlook.svg",
     services: ["microsoft", "email", "calendar"],
     status: "coming_soon",
-    categorys: "communication",
+    categories: "communication",
   },
   {
     id: "microsoft-todo",
@@ -97,6 +97,6 @@ export const AVAILABLE_TOOLS = [
     icon: "/icons/Microsoft_To-Do.svg",
     services: ["microsoft", "tasks", "reminders"],
     status: "coming_soon",
-    categorys: "action",
+    categories: "actions",
   },
 ];
