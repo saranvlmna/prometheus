@@ -11,7 +11,7 @@ export default (data) => {
     };
 
     return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "9h",
     });
   } catch (error) {
     console.log(error);
