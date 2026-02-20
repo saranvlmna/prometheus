@@ -96,7 +96,7 @@ export default async (analysis, slackData, user, oAuth2Client, options = { autoE
       );
       const result = await plugin.execute(action, context);
 
-      const finalStatus = result.success ? STATUS.COMPLETED : STATUS.FAILED;
+      const finalStatus = result.success ? STATUS.COMPLETED : STATUS.PENDING;
       await actionUpdate(savedAction._id, {
         status: finalStatus,
         executedAt: new Date(),
