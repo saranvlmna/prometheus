@@ -11,7 +11,7 @@ export default async (req, res) => {
     let user = await userFindByEmail(email);
     if (user && user.password != password) return res.status(401).json({ message: "Invalid credentials" });
 
-    if (!user) user = await userCreate({ email, password, name });
+    if (!user) user = await userCreate({ email, password, name, isPersonaCreated: false });
 
     const accessToken = jwtGen(user);
     res.json({ message: "Login successful", accessToken });
