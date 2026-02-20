@@ -130,6 +130,8 @@ export default async (req, res) => {
 
       const aiResponse = await runSlackAnalysis(contextMessages, dbUser?.persona);
 
+      console.log("aiResponseaiResponse",aiResponse)
+      
       const lastMessage = contextMessages[4];
 
       const actionCreate = await slackActionOrchestrator(
