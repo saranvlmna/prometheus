@@ -3,6 +3,7 @@ import createGmailDraft from "../google/gmail/draft.create.js";
 import createGoogleTask from "../google/task/tasks.create.js";
 import subscriptionFind from "../subscription/lib/subscription.find.js";
 import findById from "../user/lib/user.find.by.id.js";
+import actionFindById from "./lib/action.find.by.id.js";
 import actionUpdate from "./lib/action.update.js";
 
 export default async (req, res) => {
@@ -10,7 +11,7 @@ export default async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    const action = await findActionById(id);
+    const action = await actionFindById(id);
     if (!action) return res.status(404).json({ error: "Action not found" });
 
     if (status === STATUS.DECLINED) {
