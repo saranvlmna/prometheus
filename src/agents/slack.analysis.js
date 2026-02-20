@@ -1,6 +1,7 @@
-import { azureOpenAIClient as client } from "./lib/azure_openai.js";
+import client from "../../config/azure.openai.js";
 import pluginRegistry from "./lib/plugins/plugin.registry.js";
 
+const azureAiClient = client();
 const deployment = process.env.AZURE_DEPLOYMENT;
 
 const buildPrompt = (slackMessages, userPersona) => {
@@ -11,9 +12,8 @@ const buildPrompt = (slackMessages, userPersona) => {
   const currentMessage = slackMessages[slackMessages.length - 1];
   const history = slackMessages.slice(0, -1);
 
-  const formattedHistory = history.length > 0
-    ? history.map(m => `[${m.fromUser}]: ${m.message}`).join("\n")
-    : "No previous history.";
+  const formattedHistory =
+    history.length > 0 ? history.map((m) => `[${m.fromUser}]: ${m.message}`).join("\n") : "No previous history.";
 
   return `
 You are an expert chat triage agent for professionals.
@@ -116,7 +116,7 @@ export const runSlackAnalysis = async (slackMessages, userPersona) => {
   const prompt = buildPrompt(slackMessages, userPersona);
 
   try {
-    const completion = await client.chat.completions.create({
+    const completion = await azureAiClient.chat.completions.create({
       model: deployment,
       messages: [
         {

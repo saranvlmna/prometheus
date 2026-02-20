@@ -1,7 +1,12 @@
 import axios from "axios";
+import Subscription from "../../database/model/subscription.js";
+import { SUBSCRIPTION } from "../../shared/constants/system.js";
+import slackActionOrchestrator from "../agents/lib/executor/slack.action.orchestrator.js";
+import { runSlackAnalysis } from "../agents/slack.analysis.js";
 import channelFetch from "../slack/lib/channel.fetch.js";
 import messagesFetch from "../slack/lib/messages.fetch.js";
 import userFetch from "../slack/lib/user.fetch.js";
+import userFindById from "../user/lib/user.find.by.id.js";
 
 export default async (req, res) => {
   try {
@@ -101,7 +106,41 @@ export default async (req, res) => {
         };
       });
 
-      console.log("Messages:", contextMessages);
+      const toUserId = contextMessages[4]?.toUserId;
+
+      const subscription = await Subscription.findOne({
+        provider: SUBSCRIPTION.SLACK,
+        providerId: toUserId,
+      });
+
+      if (!subscription) {
+        console.error("No active subscription found for Slack analysis.");
+        return res.sendStatus(200);
+      }
+
+      const dbUser = await userFindById(subscription.userId);
+      if (!dbUser) {
+        console.error("User not found for subscription:", subscription.userId);
+        return res.sendStatus(200);
+      }
+
+      const aiResponse = await runSlackAnalysis(contextMessages, dbUser?.persona);
+
+      const lastMessage = contextMessages[4];
+
+      const actionCreate = await slackActionOrchestrator(
+        aiResponse,
+        {
+          channelName: lastMessage.channelName,
+          fromUser: lastMessage.fromUser,
+          toUser: lastMessage.toUser,
+          message: lastMessage.message,
+        },
+        dbUser,
+        null,
+        { autoExecute: true },
+      );
+      console.log("Action Created", actionCreate);
     }
 
     res.sendStatus(200);
