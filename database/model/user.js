@@ -20,6 +20,16 @@ const userSchema = new mongoose.Schema(
     preferences: {
       autoExecuteActions: { type: Boolean, default: false },
     },
+    isPersonaCreated: {
+      type: Boolean,
+      default: false,
+    },
+    persona: {
+      role: { type: String },
+      company: { type: String },
+      projectKeywords: [{ type: String }],
+      tools: [{ type: String }],
+    },
   },
   {
     timestamps: true,

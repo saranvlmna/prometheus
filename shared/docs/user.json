@@ -1,9 +1,16 @@
 {
-  "tags": [{ "name": "user", "description": "User authentication and profile management" }],
+  "tags": [
+    {
+      "name": "user",
+      "description": "User authentication and profile management"
+    }
+  ],
   "paths": {
     "/user/signin": {
       "post": {
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "summary": "User sign in",
         "description": "Authenticate user with email and password",
         "requestBody": {
@@ -23,7 +30,10 @@
                     "description": "User password"
                   }
                 },
-                "required": ["email", "password"]
+                "required": [
+                  "email",
+                  "password"
+                ]
               }
             }
           }
@@ -40,34 +50,135 @@
                       "type": "string",
                       "description": "JWT authentication token"
                     },
-                    "user": { "$ref": "#/components/schemas/User" }
+                    "user": {
+                      "$ref": "#/components/schemas/User"
+                    }
                   }
                 }
               }
             }
           },
-          "400": { "description": "Invalid credentials" },
-          "500": { "description": "Internal server error" }
+          "400": {
+            "description": "Invalid credentials"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     },
     "/user/profile": {
       "get": {
-        "tags": ["user"],
+        "tags": [
+          "user"
+        ],
         "summary": "Get user profile",
         "description": "Retrieve authenticated user's profile information",
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "User profile retrieved successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/User" }
+                "schema": {
+                  "$ref": "#/components/schemas/User"
+                }
               }
             }
           },
-          "401": { "description": "Unauthorized - Invalid or missing token" },
-          "500": { "description": "Internal server error" }
+          "401": {
+            "description": "Unauthorized - Invalid or missing token"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/user/persona": {
+      "get": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Get user persona",
+        "description": "Retrieve authenticated user's professional persona information",
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User persona retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Persona"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "user"
+        ],
+        "summary": "Create or update user persona",
+        "description": "Save professional persona information for the authenticated user",
+        "security": [
+          {
+            "accessToken": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Persona"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Persona updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "persona": {
+                      "$ref": "#/components/schemas/Persona"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Missing required fields"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     }
@@ -77,12 +188,61 @@
       "User": {
         "type": "object",
         "properties": {
-          "_id": { "type": "string", "description": "User unique identifier" },
-          "email": { "type": "string", "format": "email", "description": "User email address" },
-          "name": { "type": "string", "description": "User full name" },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "_id": {
+            "type": "string",
+            "description": "User unique identifier"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "User email address"
+          },
+          "name": {
+            "type": "string",
+            "description": "User full name"
+          },
+          "persona": {
+            "$ref": "#/components/schemas/Persona"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
+      },
+      "Persona": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "description": "Professional role"
+          },
+          "company": {
+            "type": "string",
+            "description": "Company name"
+          },
+          "projectKeywords": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "List of project related keywords"
+          },
+          "tools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tools and platforms used"
+          }
+        },
+        "required": [
+          "role"
+        ]
       }
     },
     "securitySchemes": {
