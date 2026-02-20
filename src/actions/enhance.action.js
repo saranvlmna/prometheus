@@ -7,13 +7,13 @@ export default async (req, res) => {
     try {
         const { actionId } = req.params;
         const { description } = req.body;
-        const { user_id: userId } = req.user;
+        const { user_id } = req.user;
 
         const action = await actionFindById(actionId);
         if (!action) return res.status(404).json({ error: "Action not found" });
 
         // Check if the action belongs to the user
-        if (action.userId.toString() !== userId) {
+        if (action.userId.toString() !== user_id) {
             return res.status(403).json({ error: "Unauthorized access to this action" });
         }
 
