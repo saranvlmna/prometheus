@@ -1,5 +1,6 @@
-import client from "../../config/azure.openai.js";
+import createAzureClient from "../../config/azure.openai.js";
 
+const client = createAzureClient();
 const deployment = process.env.AZURE_DEPLOYMENT;
 
 export default async (action, description, persona) => {

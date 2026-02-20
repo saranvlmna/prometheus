@@ -1,9 +1,10 @@
-import client from "../../config/azure.openai.js";
+import createAzureClient from "../../config/azure.openai.js";
 import { ensureValidToken } from "../../shared/azure/refreshToken.js";
 import { SOURSE } from "../../shared/constants/system.js";
 import userFindOne from "../user/lib/user.find.one.js";
 import { getTools } from "./tools.js";
 
+const azureAiClient = createAzureClient();
 const deployment = process.env.AZURE_DEPLOYMENT;
 
 export default async (source, eventData) => {
@@ -47,7 +48,7 @@ export default async (source, eventData) => {
       { role: "user", content: messageContent },
     ];
 
-    const response = await client.chat.completions.create({
+    const response = await azureAiClient.chat.completions.create({
       model: deployment,
       messages,
       tools: tools.map((t) => ({ type: t.type, function: t.function })),
@@ -75,7 +76,7 @@ export default async (source, eventData) => {
         }
       }
 
-      const secondResponse = await client.chat.completions.create({
+      const secondResponse = await azureAiClient.chat.completions.create({
         model: deployment,
         messages,
       });

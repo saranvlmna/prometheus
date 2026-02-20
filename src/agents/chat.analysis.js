@@ -1,8 +1,9 @@
-import client from "../../config/azure.openai.js";
+import createAzureClient from "../../config/azure.openai.js";
 
+const azureAiClient = createAzureClient();
 const deployment = process.env.AZURE_DEPLOYMENT;
 
-export default async (chatHistory) => {
+export default async (chatHistory, userPersona) => {
   try {
 
     const prompt = `
@@ -110,7 +111,7 @@ export default async (chatHistory) => {
     //   ${chatHistory.map((m) => `${m.sender}: ${m.text}`).join("\n")}
     // `;
 
-    const completion = await client.chat.completions.create({
+    const completion = await azureAiClient.chat.completions.create({
       model: deployment,
       messages: [
         { role: "system", content: "You are an expert chat analyst. Respond only with structured JSON." },

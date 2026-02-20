@@ -1,4 +1,4 @@
-import client from "../../config/azure.openai.js";
+import createAzureClient from "../../config/azure.openai.js";
 import pluginRegistry from "./lib/plugins/plugin.registry.js";
 
 const deployment = process.env.AZURE_DEPLOYMENT;
@@ -191,7 +191,7 @@ export const runGmailAnalysis = async (emailData, userPersona) => {
   const prompt = buildPrompt(emailData, userPersona);
 
   try {
-    const azureAiClient = client();
+    const azureAiClient = createAzureClient();
 
     const completion = await azureAiClient.chat.completions.create({
       model: deployment,
