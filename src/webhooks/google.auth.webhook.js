@@ -74,17 +74,15 @@ export default async (req, res) => {
     }
 
     res.send(`
+<html>
+<body>
 <script>
-
-  // 1. Tell the parent we are done
-
-  window.opener.postMessage({ type: "AUTH_SUCCESS" }, window.location.origin);
-
-  // 2. Close this window immediately
-
-  window. Close();
+          window.opener.postMessage({ type: 'AUTH_SUCCESS' }, "*");
+          window.close();
 </script>
- 
+<p>Authentication successful! Closing window...</p>
+</body>
+</html>
   `);
   } catch (error) {
     console.error(error);
