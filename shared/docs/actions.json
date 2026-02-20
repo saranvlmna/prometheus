@@ -1,9 +1,16 @@
 {
-  "tags": [{ "name": "actions", "description": "Actions management endpoints" }],
+  "tags": [
+    {
+      "name": "actions",
+      "description": "Actions management endpoints"
+    }
+  ],
   "paths": {
     "/actions": {
       "get": {
-        "tags": ["actions"],
+        "tags": [
+          "actions"
+        ],
         "summary": "List all actions",
         "description": "Retrieve a list of all actions with their details",
         "responses": {
@@ -20,13 +27,17 @@
               }
             }
           },
-          "500": { "description": "Internal server error" }
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     },
     "/actions/{id}": {
       "get": {
-        "tags": ["actions"],
+        "tags": [
+          "actions"
+        ],
         "summary": "Get action by ID",
         "description": "Retrieve a specific action by its ID",
         "parameters": [
@@ -35,7 +46,9 @@
             "in": "path",
             "required": true,
             "description": "Action ID",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -43,18 +56,26 @@
             "description": "Action found",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Action" }
+                "schema": {
+                  "$ref": "#/components/schemas/Action"
+                }
               }
             }
           },
-          "404": { "description": "Action not found" },
-          "500": { "description": "Internal server error" }
+          "404": {
+            "description": "Action not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     },
     "/actions/{id}/status": {
       "post": {
-        "tags": ["actions"],
+        "tags": [
+          "actions"
+        ],
         "summary": "Update action status",
         "description": "Update the status of a specific action",
         "parameters": [
@@ -63,7 +84,9 @@
             "in": "path",
             "required": true,
             "description": "Action ID",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -76,10 +99,17 @@
                   "status": {
                     "type": "string",
                     "description": "New status for the action",
-                    "enum": ["pending", "in-progress", "completed", "failed"]
+                    "enum": [
+                      "pending",
+                      "in-progress",
+                      "completed",
+                      "failed"
+                    ]
                   }
                 },
-                "required": ["status"]
+                "required": [
+                  "status"
+                ]
               }
             }
           }
@@ -89,19 +119,29 @@
             "description": "Status updated successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Action" }
+                "schema": {
+                  "$ref": "#/components/schemas/Action"
+                }
               }
             }
           },
-          "400": { "description": "Invalid request" },
-          "404": { "description": "Action not found" },
-          "500": { "description": "Internal server error" }
+          "400": {
+            "description": "Invalid request"
+          },
+          "404": {
+            "description": "Action not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     },
     "/actions/{id}/payload": {
       "post": {
-        "tags": ["actions"],
+        "tags": [
+          "actions"
+        ],
         "summary": "Update action payload",
         "description": "Update the payload/data of a specific action",
         "parameters": [
@@ -110,7 +150,9 @@
             "in": "path",
             "required": true,
             "description": "Action ID",
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -129,34 +171,141 @@
             "description": "Payload updated successfully",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/Action" }
+                "schema": {
+                  "$ref": "#/components/schemas/Action"
+                }
               }
             }
           },
-          "400": { "description": "Invalid request" },
-          "404": { "description": "Action not found" },
-          "500": { "description": "Internal server error" }
+          "400": {
+            "description": "Invalid request"
+          },
+          "404": {
+            "description": "Action not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
+      }
+    },
+    "/actions/enhance/{actionId}": {
+      "post": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "AI Enhance an action",
+        "description": "Uses AI to refine an action's payload based on a user-provided description and their persona. Returns the enhanced data without updating the database.",
+        "parameters": [
+          {
+            "name": "actionId",
+            "in": "path",
+            "required": true,
+            "description": "Action ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "description": {
+                    "type": "string",
+                    "description": "Refinement request or description"
+                  }
+                },
+                "required": [
+                  "description"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Action enhanced successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "enhancement": {
+                      "$ref": "#/components/schemas/Enhancement"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Description is required"
+          },
+          "404": {
+            "description": "Action not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
         }
       }
     }
   },
   "components": {
     "schemas": {
+      "Enhancement": {
+        "type": "object",
+        "properties": {
+          "enhancedPayload": {
+            "type": "object"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "reasoning": {
+            "type": "string"
+          }
+        }
+      },
       "Action": {
         "type": "object",
         "properties": {
-          "_id": { "type": "string", "description": "Action unique identifier" },
+          "_id": {
+            "type": "string",
+            "description": "Action unique identifier"
+          },
           "status": {
             "type": "string",
-            "enum": ["pending", "in-progress", "completed", "failed"],
+            "enum": [
+              "pending",
+              "in-progress",
+              "completed",
+              "failed"
+            ],
             "description": "Current status of the action"
           },
           "payload": {
             "type": "object",
             "description": "Action payload/data"
           },
-          "createdAt": { "type": "string", "format": "date-time" },
-          "updatedAt": { "type": "string", "format": "date-time" }
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
         }
       }
     }

@@ -21,7 +21,7 @@ export default async (req, res) => {
             return res.status(400).json({ error: "Description is required for enhancement" });
         }
 
-        const user = await userFindById(userId);
+        const user = await userFindById(user_id);
         const persona = user?.persona;
 
         const enhancement = await actionEnhance(action, description, persona);
