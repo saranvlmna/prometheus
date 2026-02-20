@@ -13,8 +13,7 @@ export default async (req, res) => {
 
     // Check if the action belongs to the user
 
-    console.log(action, user_id);
-    if (action.userId != user_id) {
+    if (action?.userId?._id != user_id) {
       return res.status(403).json({ error: "Unauthorized access to this action" });
     }
 
