@@ -69,6 +69,55 @@
             "description": "Internal server error"
           }
         }
+      },
+      "post": {
+        "tags": [
+          "actions"
+        ],
+        "summary": "Update action",
+        "description": "General update for an action by its ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "Action ID",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Action"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Action updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Action"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Action not found"
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        }
       }
     },
     "/actions/{id}/status": {
