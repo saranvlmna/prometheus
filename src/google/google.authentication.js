@@ -1,9 +1,5 @@
 import googleConfig from "../../config/google.js";
 
-/* ------------------------------------------------ */
-/* Tool specific scopes                             */
-/* ------------------------------------------------ */
-
 const SCOPES_MAP = {
   gmail: ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.modify"],
 
@@ -19,17 +15,11 @@ const SCOPES_MAP = {
   ],
 };
 
-/* ------------------------------------------------ */
-/* Identity scopes                                  */
-/* ------------------------------------------------ */
-
 const IDENTITY_SCOPES = [
   "openid",
   "https://www.googleapis.com/auth/userinfo.profile",
   "https://www.googleapis.com/auth/userinfo.email",
 ];
-
-/* ------------------------------------------------ */
 
 export default async (req, res) => {
   try {
@@ -39,8 +29,6 @@ export default async (req, res) => {
       return res.status(400).json({ error: "toolId is required" });
     }
 
-    /* ---------- not implemented ---------- */
-
     const notImplemented = ["google-chat"]; // fixed spacing bug
 
     if (notImplemented.includes(toolId)) {
@@ -49,15 +37,11 @@ export default async (req, res) => {
       });
     }
 
-    /* ---------- oauth client ---------- */
-
     const oAuth2Client = googleConfig();
 
     console.log("[GoogleAuth] Redirect URI:", oAuth2Client._redirectUri);
     console.log("[GoogleAuth] Client ID:", oAuth2Client._clientId);
     console.log("[GoogleAuth] Tool:", toolId);
-
-    /* ---------- scopes ---------- */
 
     const toolScopes = SCOPES_MAP[toolId] || [];
 
@@ -65,13 +49,11 @@ export default async (req, res) => {
 
     console.log("[GoogleAuth] Using scopes:", scopes);
 
-    /* ---------- auth url ---------- */
-
     const authUrl = oAuth2Client.generateAuthUrl({
-      access_type: "offline", // refresh token
+      access_type: "offline",
       scope: scopes,
-      prompt: "consent", // force new scopes
-      include_granted_scopes: true, // incremental auth ⭐
+      prompt: "consent",
+      include_granted_scopes: true,
       state: JSON.stringify({ toolId }),
     });
 
