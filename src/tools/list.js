@@ -6,7 +6,7 @@ export default async (req, res) => {
 
     const avalidTools = AVAILABLE_TOOLS;
     const connectedTools = await toolsFind(user_id);
-    if (connectedTools.length === 0) return res.json({ tools: avalidTools });
+    if (connectedTools.length === 0) return res.json({ tools: AVAILABLE_TOOLS });
 
     const result = [];
     avalidTools.forEach((tool) => {
