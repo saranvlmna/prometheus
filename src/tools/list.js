@@ -12,7 +12,7 @@ export default async (req, res) => {
     if (!connectedTools.length) {
       return res.json({ tools });
     }
-
+ 
     const result = tools.map((tool) => {
       const isConnected = connectedTools.some((connectedTool) => connectedTool.toolId === tool.id);
 
