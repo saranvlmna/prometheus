@@ -3,27 +3,43 @@ import pluginRegistry from "./lib/plugins/plugin.registry.js";
 
 const deployment = process.env.AZURE_DEPLOYMENT;
 
-const buildPrompt = (slackData) => {
+const buildPrompt = (slackMessages, userPersona) => {
   const knownTypes = pluginRegistry.getTypes().join(" | ");
   const now = new Date().toISOString();
+
+  // The last message in the array is the current one
+  const currentMessage = slackMessages[slackMessages.length - 1];
+  const history = slackMessages.slice(0, -1);
+
+  const formattedHistory = history.length > 0
+    ? history.map(m => `[${m.fromUser}]: ${m.message}`).join("\n")
+    : "No previous history.";
 
   return `
 You are an expert chat triage agent for professionals.
 Current datetime (ISO 8601, UTC): ${now}
 
 ═══════════════════════════════════════════
+USER PERSONA
+═══════════════════════════════════════════
+  Role              : ${userPersona?.role}
+  Company           : ${userPersona?.company || "not specified"}
+  Project Keywords  : ${(userPersona?.projectKeywords || []).join(", ") || "not specified"}
+  Tools & Platforms : ${(userPersona?.tools || []).join(", ") || "not specified"}
+
+═══════════════════════════════════════════
 TASK
 ═══════════════════════════════════════════
-Analyze the Slack message below and return a structured JSON object.
+Analyze the Slack conversation below and return a structured JSON object.
+Focus on the CURRENT MESSAGE to detect actions, using the HISTORY for context if needed.
 
 STEP 1 — IMPORTANCE
-Decide if this message is actionable/important.
+Decide if the CURRENT MESSAGE is actionable/important.
 Assign:
   "importance": "high" | "medium" | "low" | "ignore"
   "audience": array of roles this is most relevant for → ["developer","pm","ceo","designer","qa","devops","all"]
 
 STEP 2 — MULTI-INTENT DETECTION
-A message can require MULTIPLE actions simultaneously.
 Detect all applicable actions from this set: ${knownTypes}
 
 For EACH action detected, produce an entry in the "actions" array.
@@ -60,7 +76,7 @@ type: "jira_ticket"
 ─────────────────────────────────────────
 
 STEP 3 — OVERALL METADATA
-  "summary"   : 1-2 sentence plain-English summary of the message
+  "summary"   : 1-2 sentence plain-English summary of the current message (contextualized by history)
   "reasoning" : brief explanation of your classification decisions
 
 ═══════════════════════════════════════════
@@ -82,18 +98,22 @@ OUTPUT FORMAT — return ONLY valid JSON, no markdown, no extra text:
 If no actions are needed, return "actions": [].
 
 ═══════════════════════════════════════════
-SLACK MESSAGE
+SLACK CONTEXT
 ═══════════════════════════════════════════
-From        : ${slackData.user} (ID: ${slackData.userId})
-Channel/DM  : ${slackData.channel}
-Date        : ${slackData.ts_iso || "unknown"}
-Message:
-${slackData.text}
+Channel: ${currentMessage.channelName}
+
+HISTORY:
+${formattedHistory}
+
+CURRENT MESSAGE (Analyze this for actions):
+From: ${currentMessage.fromUser}
+To: ${currentMessage.toUser || "Channel"}
+Message: ${currentMessage.message}
 `;
 };
 
-export const runSlackAnalysis = async (slackData) => {
-  const prompt = buildPrompt(slackData);
+export const runSlackAnalysis = async (slackMessages, userPersona) => {
+  const prompt = buildPrompt(slackMessages, userPersona);
 
   try {
     const completion = await client.chat.completions.create({
