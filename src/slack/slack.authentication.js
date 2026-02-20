@@ -40,10 +40,12 @@ export default async (req, res) => {
       `&redirect_uri=${encodeURIComponent(redirectUri)}` +
       `&state=${state}`;
 
-    return res.json({
-      loginUrl,
-      installUrl,
-    });
+    // return res.json({
+    //   loginUrl,
+    //   installUrl,
+    // });
+
+    return res.json({ authUrl: loginUrl });
   } catch (error) {
     console.error(error);
     return res.status(500).json({

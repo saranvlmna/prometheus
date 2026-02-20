@@ -3,7 +3,7 @@ import pluginRegistry from "./lib/plugins/plugin.registry.js";
 
 const deployment = process.env.AZURE_DEPLOYMENT;
 
-const buildPrompt = (emailData) => {
+const buildPrompt = (emailData, userPersona) => {
   const knownTypes = pluginRegistry.getTypes().join(" | ");
   const now = new Date().toISOString();
 
@@ -14,20 +14,20 @@ const buildPrompt = (emailData) => {
     ═══════════════════════════════════════════
     USER PERSONA
     ═══════════════════════════════════════════
-      Role              : ${userPersona.role}
-      Company           : ${userPersona.company || "not specified"}
-      Project Keywords  : ${(userPersona.projectKeywords || []).join(", ") || "not specified"}
-      Tools & Platforms : ${(userPersona.tools || []).join(", ") || "not specified"}
+      Role              : ${userPersona?.role}
+      Company           : ${userPersona?.company || "not specified"}
+      Project Keywords  : ${(userPersona?.projectKeywords || []).join(", ") || "not specified"}
+      Tools & Platforms : ${(userPersona?.tools || []).join(", ") || "not specified"}
 
     CLASSIFICATION RULES:
       1. ROLE — Use the job title as the primary relevance signal. Match email content to
         what that role genuinely cares about. Downgrade anything outside their scope.
 
-      2. INTERNAL vs EXTERNAL — If sender domain matches "${userPersona.company}", it's
+      2. INTERNAL vs EXTERNAL — If sender domain matches "${userPersona?.company}", it's
         internal (higher priority). External emails get stricter filtering — downgrade
         cold outreach, newsletters, and vendor spam unless directly actionable.
 
-      3. PROJECT KEYWORDS — Scan subject + body for: ${(userPersona.projectKeywords || []).join(", ") || "none"}.
+      3. PROJECT KEYWORDS — Scan subject + body for: ${(userPersona?.projectKeywords || []).join(", ") || "none"}.
         A match boosts importance by one level. Mention the matched keyword in reasoning.
 
       4. TOOL FILTERING — Only create jira_ticket if Jira is in tools. Notifications from
@@ -82,10 +82,6 @@ const buildPrompt = (emailData) => {
     ${emailData.body}
     `;
 };
-
-
-
-
 
 //   return `
 // You are an expert email triage agent for professionals (developers, project managers, CEOs).
@@ -191,8 +187,8 @@ const buildPrompt = (emailData) => {
 // `;
 // };
 
-export const runGmailAnalysis = async (emailData) => {
-  const prompt = buildPrompt(emailData);
+export const runGmailAnalysis = async (emailData, userPersona) => {
+  const prompt = buildPrompt(emailData, userPersona);
 
   try {
     const azureAiClient = client();

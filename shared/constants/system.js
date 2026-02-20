@@ -10,6 +10,7 @@ export const STATUS = {
 
 export const SUBSCRIPTION = {
   GOOGLE: "google",
+  SLACK: "slack",
 };
 
 export const ACTION_TYPES = {

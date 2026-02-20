@@ -26,7 +26,7 @@ export default async (req, res) => {
 
     const subData = {
       userId: user._id,
-      provider: "google",
+      provider: SUBSCRIPTION.GOOGLE,
       providerId: id,
       accessToken: tokens.access_token,
       refreshToken: tokens.refresh_token || subscription?.refreshToken,

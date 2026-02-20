@@ -13,7 +13,7 @@ import userFindByEmail from "../user/lib/user.find.by.email.js";
 export default async (req, res) => {
   console.log("[Webhook] Received Pub/Sub message");
   res.status(200).send("OK");
-  
+
   try {
     const pubsubMessage = req.body?.message;
 
@@ -106,7 +106,11 @@ export default async (req, res) => {
         console.log(`[Webhook] ${batchLabel} Analyzing email: "${emailData.subject}" from ${emailData.from}`);
 
         console.log(`[Webhook] ${batchLabel} Starting Phase 1: AI Analysis...`);
-        const analysis = await runGmailAnalysis(emailData);
+
+        const userPersona = await userFindByEmail(emailAddress);
+        const personaInfo = userPersona.persona;
+
+        const analysis = await runGmailAnalysis(emailData, personaInfo);
         console.log(
           `[Webhook] ${batchLabel} Analysis Result → Importance: ${analysis.importance}, ` +
             `Actions: [${analysis.actions.map((a) => a.type).join(", ")}]`,

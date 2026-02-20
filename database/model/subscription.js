@@ -9,7 +9,6 @@ const subscriptionSchema = new mongoose.Schema(
     },
     provider: {
       type: String,
-      enum: ["google", "azure"],
       required: true,
     },
     providerId: {
