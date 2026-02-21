@@ -1,6 +1,8 @@
+import { STATUS } from "../../shared/constants/system.js";
 import eventCreate from "../google/calender/event.create.js";
 import subscriptionFind from "../subscription/lib/subscription.find.js";
 import actionFindById from "./lib/action.find.by.id.js";
+import actionUpdateStatus from "./lib/action.update.status.js";
 
 export default async (req, res) => {
   try {
@@ -24,6 +26,10 @@ export default async (req, res) => {
         start: action?.payload?.start_time,
         end: action?.payload?.end_time,
       });
+
+      // Update action status to completed
+      await actionUpdateStatus(action_id, STATUS.COMPLETED);
+
       return res.json({ message: "Calender event created successfully", data: calender });
     }
 
