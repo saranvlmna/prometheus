@@ -27,13 +27,11 @@ const actionSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["pending", "approved", "declined", "executing", "completed", "failed"],
       default: "pending",
       index: true,
     },
     priority: {
       type: String,
-      enum: ["high", "medium", "low", "ignore"],
       default: "medium",
     },
     payload: {

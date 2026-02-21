@@ -13,7 +13,6 @@ const ToolSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["connected", "disconnected", "pending"],
       default: "connected",
     },
     config: {

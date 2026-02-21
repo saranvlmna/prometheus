@@ -10,7 +10,6 @@ const messageSchema = new mongoose.Schema(
     },
     platform: {
       type: String,
-      enum: ["teams", "teams-channel", "outlook"],
       required: true,
     },
     messageId: {
