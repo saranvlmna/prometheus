@@ -16,7 +16,9 @@ export default async (req, res) => {
       provider = "google";
     }
 
+    console.log("Action ID", action_id);
     const action = await actionFindById(action_id);
+    console.log("Action", action);
     const subscription = await subscriptionFind(user_id, provider);
 
     if (type == "calendar_reminder") {
