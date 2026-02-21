@@ -13,17 +13,17 @@ export default async (refreshToken, data) => {
     auth: oauth2Client,
   });
 
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const eventStart = data.start ? new Date(data.start) : new Date(Date.now() + 86400000);
+  const eventEnd = data.end ? new Date(data.end) : new Date(eventStart.getTime() + 60 * 60000);
+
   const event = {
-    summary: data.title,
-    description: data.description,
-    start: {
-      dateTime: data.start,
-      timeZone: "Asia/Kolkata",
-    },
-    end: {
-      dateTime: data.end,
-      timeZone: "Asia/Kolkata",
-    },
+    summary: `📋 Task: ${data.title}`,
+    description: data.description || "",
+    start: { dateTime: eventStart.toISOString(), timeZone: tz },
+    end: { dateTime: eventEnd.toISOString(), timeZone: tz },
+    colorId: "6",
+    reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 60 }] },
   };
 
   const response = await calendar.events.insert({
