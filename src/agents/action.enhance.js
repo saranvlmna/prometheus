@@ -16,7 +16,7 @@ export default async (action, description, persona) => {
         const messages = [
             {
                 role: "system",
-                content: `You are an expert office assistant specializing in productivity and task management. Your job is to intelligently enhance or transform an action based on the user's refinement request and their professional context.
+                content: `You are an expert office assistant specializing in productivity and task management. Your job is to intelligently enhance or transform an action , the action type and the payload based on the user's refinement request and their professional context.
 
 ---
 
@@ -45,7 +45,7 @@ ${personaContext}
 ## Your Task
 
 Carefully analyze the user's refinement request. It may ask you to:
-1. **Enhance** the current action (improve content, add detail, adjust tone/priority, etc.)
+1. **Enhance** the current action (improve payload all values, add detail, adjust tone/priority, etc.)
 2. **Change the action type** entirely (e.g., convert a google_task into a jira_ticket) — if so, rebuild the payload from scratch according to the new type's schema.
 
 Always use the user's professional context to make the output relevant, specific, and professional.
