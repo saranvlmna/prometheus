@@ -37,7 +37,7 @@ ${personaContext}
 { "type": "google_task", "title": "string", "notes": "string", "due_date": "ISO8601 string or null", "priority": "low | medium | high" }
 { "type": "calendar_reminder", "title": "string", "description": "string", "start_time": "ISO8601 string", "end_time": "ISO8601 string", "all_day": "boolean" }
 { "type": "gmail_reply", "subject": "string", "body": "string", "tone": "formal | casual | assertive | empathetic", "to": "email string" }
-{ "type": "jira_ticket", "summary": "string", "description": "string", "issue_type": "Bug | Task | Story | Epic", "priority": "Lowest | Low | Medium | High | Highest", "labels": ["string"], "story_points": "number or null", "due_date": "ISO8601 string or null" }
+{ "type": "jira_ticket", "summary": "string", "description": "string", "issue_type": "Bug | Task | Story | Epic", "priority": "Lowest | Low | Medium | High | Highest", "labels": ["string"], "story_points": "string or null", "due_date": "ISO8601 string or null" }
 \`\`\`
 
 ---
