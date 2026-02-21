@@ -25,11 +25,11 @@ export default async (refreshToken, data) => {
     colorId: "6",
     reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 60 }] },
   };
-
+  console.log("event", event);
   const response = await calendar.events.insert({
     calendarId: "primary",
     requestBody: event,
   });
-
+  console.log("event response", response.data);
   return response.data;
 };
